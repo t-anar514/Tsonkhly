@@ -1,3 +1,5 @@
+import FormValidationView from 'src/sections/examples/form-validation-view';
+
 // ----------------------------------------------------------------------
 
 export const metadata = {
@@ -5,10 +7,5 @@ export const metadata = {
 };
 
 export default function FormValidationPage() {
-  return (
-    <div style={{ padding: '20px', textAlign: 'center' }}>
-      <h2>Form Validation Component</h2>
-      <p>This component is currently unavailable.</p>
-    </div>
-  );
+  return <FormValidationView />;
 }
