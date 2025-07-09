@@ -6,9 +6,10 @@ export const metadata = {
 
 export default function ComponentsPage() {
   return (
-    <div style={{ padding: '20px', textAlign: 'center' }}>
-      <h2>Components</h2>
-      <p>Component examples are currently unavailable.</p>
+    <div style={{ padding: '40px', textAlign: 'center' }}>
+      <h2>Tsonkhly Components</h2>
+      <p>Component documentation is currently unavailable.</p>
+      <p>Please visit the main pages of the site to see our Mongolian window and door products.</p>
     </div>
   );
 }
