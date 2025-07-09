@@ -1,3 +1,5 @@
+import PlayerView from 'src/sections/examples/player-view';
+
 // ----------------------------------------------------------------------
 
 export const metadata = {
@@ -5,10 +7,5 @@ export const metadata = {
 };
 
 export default function PlayerPage() {
-  return (
-    <div style={{ padding: '20px', textAlign: 'center' }}>
-      <h2>Player Component</h2>
-      <p>This component is currently unavailable.</p>
-    </div>
-  );
+  return <PlayerView />;
 }

@@ -1,3 +1,5 @@
+import MarkdownView from 'src/sections/examples/markdown-view';
+
 // ----------------------------------------------------------------------
 
 export const metadata = {
@@ -5,10 +7,5 @@ export const metadata = {
 };
 
 export default function MarkdownPage() {
-  return (
-    <div style={{ padding: '20px', textAlign: 'center' }}>
-      <h2>Markdown Component</h2>
-      <p>This component is currently unavailable.</p>
-    </div>
-  );
+  return <MarkdownView />;
 }

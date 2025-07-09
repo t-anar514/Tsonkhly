@@ -1,3 +1,5 @@
+import LightboxView from 'src/sections/examples/lightbox-view';
+
 // ----------------------------------------------------------------------
 
 export const metadata = {
@@ -5,10 +7,5 @@ export const metadata = {
 };
 
 export default function LightboxPage() {
-  return (
-    <div style={{ padding: '20px', textAlign: 'center' }}>
-      <h2>Lightbox Component</h2>
-      <p>This component is currently unavailable.</p>
-    </div>
-  );
+  return <LightboxView />;
 }

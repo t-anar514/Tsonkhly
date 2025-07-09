@@ -1,3 +1,5 @@
+import LabelView from 'src/sections/examples/label-view';
+
 // ----------------------------------------------------------------------
 
 export const metadata = {
@@ -5,10 +7,5 @@ export const metadata = {
 };
 
 export default function LabelPage() {
-  return (
-    <div style={{ padding: '20px', textAlign: 'center' }}>
-      <h2>Label Component</h2>
-      <p>This component is currently unavailable.</p>
-    </div>
-  );
+  return <LabelView />;
 }
