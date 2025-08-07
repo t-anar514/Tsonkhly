@@ -1,7 +1,7 @@
 
 [build]
-  command = "echo 'Skipping build'"
-  publish = "public"
+  command = "node netlify-build.js"
+  publish = "out"
 
 [build.environment]
   NODE_VERSION = "18"

@@ -7,6 +7,16 @@ const nextConfig = {
   typescript: {
     ignoreBuildErrors: true,
   },
+  // Set output to export for static site generation
+  output: 'export',
+  // Completely disable server-side rendering for deployment
+  experimental: {
+    serverComponentsExternalPackages: [
+      '@mui/material',
+      '@emotion/react',
+      '@emotion/styled'
+    ],
+  },
   // Skip building problematic pages for quicker deployment
   skipTrailingSlashRedirect: true,
   skipMiddlewareUrlNormalize: true,
@@ -39,15 +49,8 @@ const nextConfig = {
     
     return config;
   },
-  // Exclude problematic routes from the build
-  async rewrites() {
-    return [
-      {
-        source: '/components/:path*',
-        destination: '/components',
-      },
-    ];
-  },
+  // Static exports cannot use rewrites
+  // Removed rewrites section for compatibility with output: 'export'
 };
 
 module.exports = nextConfig;
