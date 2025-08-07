@@ -1,4 +1,4 @@
-import EcommerceCartView from 'src/sections/_ecommerce/view/ecommerce-cart-view';
+import EcommerceCartView from 'src/sections/ecommerce/view/ecommerce-cart-view';
 
 // ----------------------------------------------------------------------
 

@@ -4,7 +4,7 @@ import Container from '@mui/material/Container';
 import { useTheme } from '@mui/material/styles';
 import Typography from '@mui/material/Typography';
 
-import { _mock } from 'src/_mock';
+import { _mock } from 'src/mock';
 import { useResponsive } from 'src/hooks/use-responsive';
 import Carousel, { useCarousel, CarouselArrows } from 'src/components/carousel';
 

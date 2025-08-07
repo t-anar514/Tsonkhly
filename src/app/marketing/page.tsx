@@ -1,4 +1,4 @@
-import MarketingLandingView from 'src/sections/_marketing/view/marketing-landing-view';
+import MarketingLandingView from 'src/sections/marketing/view/marketing-landing-view';
 
 // ----------------------------------------------------------------------
 

@@ -1,0 +1,1608 @@
+import React, { useState, useEffect } from 'react';
+import {
+  Box,
+  Typography,
+  TextField,
+  Button,
+  Card,
+  CardContent,
+  Grid,
+  Divider,
+} from '@mui/material';
+import WindowPreview from '../../components/WindowPreview';
+import { WindowConfig } from '../../data/windowConfigurations';
+
+export default function WindowVisualizer() {
+  // Default window configuration JSON
+  const defaultConfigJson = `{
+  "id": "double-horizontal",
+  "name": "Double Horizontal (Side-by-Side)",
+  "width": 400,
+  "height": 300,
+  "color": "#f0f0f0",
+  "partitions": {
+    "horizontal": 0,
+    "vertical": 0
+  },
+  "openingType": "turn",
+  "frameLayout": "double-horizontal"
+}`;
+
+  // State
+  const [jsonInput, setJsonInput] = useState<string>(defaultConfigJson);
+  const [config, setConfig] = useState<WindowConfig | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [paneWidths, setPaneWidths] = useState<number[]>([]);
+  const [totalWidth, setTotalWidth] = useState<number>(0);
+  const [paneHeights, setPaneHeights] = useState<number[]>([]);
+  const [totalHeight, setTotalHeight] = useState<number>(0);
+  // No longer using tabs as width and height will be shown together
+
+  // Handle JSON input change
+  const handleJsonChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    setJsonInput(event.target.value);
+  };
+
+  // Visualize the window based on the JSON input
+  const visualizeWindow = () => {
+    try {
+      const parsedConfig = JSON.parse(jsonInput) as WindowConfig;
+      setConfig(parsedConfig);
+      setError(null);
+      
+      // Store the initial total width and height
+      setTotalWidth(parsedConfig.width);
+      setTotalHeight(parsedConfig.height);
+      
+      // Initialize pane widths based on layout
+      if (parsedConfig.frameLayout === 'single') {
+        setPaneWidths([parsedConfig.width]);
+        setPaneHeights([parsedConfig.height]);
+      } 
+      else if (parsedConfig.frameLayout === 'double-horizontal') {
+        setPaneWidths([Math.round(parsedConfig.width / 2), Math.round(parsedConfig.width / 2)]);
+        setPaneHeights([parsedConfig.height, parsedConfig.height]); // Same height for both panes
+      } 
+      else if (parsedConfig.frameLayout === 'triple-horizontal') {
+        setPaneWidths([
+          Math.round(parsedConfig.width / 3), 
+          Math.round(parsedConfig.width / 3), 
+          Math.round(parsedConfig.width / 3)
+        ]);
+        setPaneHeights([parsedConfig.height, parsedConfig.height, parsedConfig.height]); // Same height for all panes
+      }
+      else if (parsedConfig.frameLayout === 'double-vertical' || parsedConfig.frameLayout === 'double-vertical-reversed') {
+        setPaneWidths([parsedConfig.width]); // Same width for both panes
+        setPaneHeights([
+          Math.round(parsedConfig.height / 2),
+          Math.round(parsedConfig.height / 2)
+        ]);
+      }
+      else if (parsedConfig.frameLayout === 't-layout') {
+        // T-Layout: top pane with two bottom panes
+        const topWidth = parsedConfig.width;
+        const bottomWidth = Math.round(parsedConfig.width / 2);
+        
+        // Top height is 40% of total height, bottom is 60%
+        const topHeight = Math.round(parsedConfig.height * 0.4);
+        const bottomHeight = Math.round(parsedConfig.height * 0.6);
+        
+        setPaneWidths([topWidth, bottomWidth, bottomWidth]);
+        setPaneHeights([topHeight, bottomHeight, bottomHeight]);
+      }
+      else if (parsedConfig.frameLayout === 'double-top') {
+        // Double-top: two panes on top, one on bottom
+        const topWidth = Math.round(parsedConfig.width / 2);
+        const bottomWidth = parsedConfig.width;
+        
+        // Top height is 40% of total height, bottom is 60%
+        const topHeight = Math.round(parsedConfig.height * 0.4);
+        const bottomHeight = Math.round(parsedConfig.height * 0.6);
+        
+        setPaneWidths([topWidth, topWidth, bottomWidth]);
+        setPaneHeights([topHeight, topHeight, bottomHeight]);
+      }
+      else if (parsedConfig.frameLayout === 'top-transom') {
+        // Top transom: small top pane with three equal panes below
+        // For width: all panes have equal width
+        const paneWidth = Math.round(parsedConfig.width / 3);
+        
+        // For height: top transom is 20%, other panes share 80%
+        const transomHeight = Math.round(parsedConfig.height * 0.2);
+        const mainHeight = Math.round(parsedConfig.height * 0.8);
+        
+        setPaneWidths([parsedConfig.width, paneWidth, paneWidth, paneWidth]);
+        setPaneHeights([transomHeight, mainHeight / 3, mainHeight / 3, mainHeight / 3]);
+      }
+      else if (parsedConfig.frameLayout === 'bottom-transom') {
+        // Bottom transom: three equal panes on top with small bottom pane
+        // For width: all panes have equal width
+        const paneWidth = Math.round(parsedConfig.width / 3);
+        const bottomWidth = parsedConfig.width;
+        
+        // For height: bottom transom is 20%, other panes share 80%
+        const mainHeight = Math.round(parsedConfig.height * 0.8);
+        const transomHeight = Math.round(parsedConfig.height * 0.2);
+        
+        setPaneWidths([paneWidth, paneWidth, paneWidth, bottomWidth]);
+        setPaneHeights([mainHeight / 3, mainHeight / 3, mainHeight / 3, transomHeight]);
+      } else {
+        // Default fallback for other layouts
+        setPaneWidths([parsedConfig.width]);
+        setPaneHeights([parsedConfig.height]);
+      }
+    } catch (err) {
+      setError('Invalid JSON format. Please check your input.');
+      setConfig(null);
+    }
+  };
+
+  // Update the config whenever pane widths change
+  useEffect(() => {
+    if (config && paneWidths.length > 0) {
+      const calculatedWidth = paneWidths.reduce((sum, width) => sum + width, 0);
+      setConfig({ ...config, width: calculatedWidth });
+    }
+  }, [paneWidths]);
+
+  // Reset to default
+  const resetToDefault = () => {
+    setJsonInput(defaultConfigJson);
+    setConfig(null);
+    setError(null);
+    setPaneWidths([]);
+    setTotalWidth(0);
+    setPaneHeights([]);
+    setTotalHeight(0);
+  };
+
+  // Handle width change for single pane layout
+  const handleSinglePaneWidthChange = (newWidth: number) => {
+    // For single pane, just update the width directly
+    setPaneWidths([newWidth]);
+  };
+
+  // Handle width change for double-horizontal layout
+  const handleDoubleHorizontalWidthChange = (index: number, newWidth: number) => {
+    const oldWidth = paneWidths[index] || 0;
+    const difference = newWidth - oldWidth;
+    
+    // Create a new array with updated widths
+    const newPaneWidths = [...paneWidths];
+    newPaneWidths[index] = newWidth;
+    
+    // Determine which pane to adjust (the other one)
+    const otherPaneIndex = index === 0 ? 1 : 0;
+    
+    // Adjust the other pane width to maintain total width
+    // Make sure it doesn't go below minimum width (10mm)
+    newPaneWidths[otherPaneIndex] = Math.max(10, (paneWidths[otherPaneIndex] || 0) - difference);
+    
+    setPaneWidths(newPaneWidths);
+  };
+
+  // Handle width change for triple-horizontal layout
+  const handleTripleHorizontalWidthChange = (index: number, newWidth: number) => {
+    const oldWidth = paneWidths[index] || 0;
+    const difference = newWidth - oldWidth;
+    
+    const newPaneWidths = [...paneWidths];
+    newPaneWidths[index] = newWidth;
+    
+    // Get indices of the other two panes
+    const otherIndices = [0, 1, 2].filter(i => i !== index);
+    
+    // Calculate total width of other panes
+    const otherPanesTotal = otherIndices.reduce((sum, i) => sum + (paneWidths[i] || 0), 0);
+    
+    if (otherPanesTotal > 0) {
+      // Distribute the difference proportionally between the other two panes
+      otherIndices.forEach(i => {
+        const ratio = (paneWidths[i] || 0) / otherPanesTotal;
+        newPaneWidths[i] = Math.max(10, (paneWidths[i] || 0) - difference * ratio);
+      });
+    }
+    
+    setPaneWidths(newPaneWidths);
+  };
+
+  // Handle single pane height change
+  const handleSinglePaneHeightChange = (newHeight: number) => {
+    // For single pane, just update the height directly
+    setPaneHeights([newHeight]);
+  };
+
+  // Handle double-vertical layout height change
+  const handleDoubleVerticalHeightChange = (index: number, newHeight: number) => {
+    const oldHeight = paneHeights[index] || 0;
+    const difference = newHeight - oldHeight;
+    
+    // Create a new array with updated heights
+    const newPaneHeights = [...paneHeights];
+    newPaneHeights[index] = newHeight;
+    
+    // Determine which pane to adjust (the other one)
+    const otherPaneIndex = index === 0 ? 1 : 0;
+    
+    // Adjust the other pane height to maintain total height
+    // Make sure it doesn't go below minimum height (10mm)
+    newPaneHeights[otherPaneIndex] = Math.max(10, (paneHeights[otherPaneIndex] || 0) - difference);
+    
+    setPaneHeights(newPaneHeights);
+  };
+
+  // Handle T-Layout height change
+  const handleTLayoutHeightChange = (index: number, newHeight: number) => {
+    const oldHeight = paneHeights[index] || 0;
+    const difference = newHeight - oldHeight;
+    
+    const newPaneHeights = [...paneHeights];
+    newPaneHeights[index] = newHeight;
+    
+    if (index === 0) {
+      // If changing top pane, adjust bottom panes equally
+      const bottomHeightTotal = (paneHeights[1] || 0) + (paneHeights[2] || 0);
+      const newBottomHeightTotal = Math.max(20, bottomHeightTotal - difference);
+      const ratio = newBottomHeightTotal / bottomHeightTotal;
+      
+      // Adjust both bottom panes proportionally
+      newPaneHeights[1] = Math.max(10, Math.round((paneHeights[1] || 0) * ratio));
+      newPaneHeights[2] = Math.max(10, Math.round((paneHeights[2] || 0) * ratio));
+    } else {
+      // If changing one of the bottom panes, adjust the other bottom pane
+      const otherBottomIndex = index === 1 ? 2 : 1;
+      newPaneHeights[otherBottomIndex] = Math.max(10, (paneHeights[otherBottomIndex] || 0) - difference);
+    }
+    
+    setPaneHeights(newPaneHeights);
+  };
+
+  // Handle Double-Top layout height change
+  const handleDoubleTopHeightChange = (index: number, newHeight: number) => {
+    const oldHeight = paneHeights[index] || 0;
+    const difference = newHeight - oldHeight;
+    
+    const newPaneHeights = [...paneHeights];
+    newPaneHeights[index] = newHeight;
+    
+    if (index === 0 || index === 1) {
+      // If changing a top pane, adjust bottom pane
+      newPaneHeights[2] = Math.max(10, (paneHeights[2] || 0) - difference);
+      // Both top panes should have the same height
+      newPaneHeights[index === 0 ? 1 : 0] = newHeight;
+    } else {
+      // If changing bottom pane, adjust both top panes equally
+      const topHeightTotal = (paneHeights[0] || 0) + (paneHeights[1] || 0);
+      const newTopHeight = Math.max(10, Math.round((topHeightTotal - difference) / 2));
+      
+      newPaneHeights[0] = newTopHeight;
+      newPaneHeights[1] = newTopHeight;
+    }
+    
+    setPaneHeights(newPaneHeights);
+  };
+
+  // Handle Double-Vertical-Small-Top layout height change
+  const handleDoubleVerticalSmallTopHeightChange = (index: number, newHeight: number) => {
+    const oldHeight = paneHeights[index] || 0;
+    const difference = newHeight - oldHeight;
+    
+    // Create a new array with updated heights
+    const newPaneHeights = [...paneHeights];
+    newPaneHeights[index] = newHeight;
+    
+    // Determine which pane to adjust (the other one)
+    const otherPaneIndex = index === 0 ? 1 : 0;
+    
+    // Adjust the other pane height to maintain total height
+    // Make sure it doesn't go below minimum height (10mm)
+    newPaneHeights[otherPaneIndex] = Math.max(10, (paneHeights[otherPaneIndex] || 0) - difference);
+    
+    setPaneHeights(newPaneHeights);
+  };
+
+  // Handle Double-Vertical-Small-Bottom layout height change
+  const handleDoubleVerticalSmallBottomHeightChange = (index: number, newHeight: number) => {
+    const oldHeight = paneHeights[index] || 0;
+    const difference = newHeight - oldHeight;
+    
+    // Create a new array with updated heights
+    const newPaneHeights = [...paneHeights];
+    newPaneHeights[index] = newHeight;
+    
+    // Determine which pane to adjust (the other one)
+    const otherPaneIndex = index === 0 ? 1 : 0;
+    
+    // Adjust the other pane height to maintain total height
+    // Make sure it doesn't go below minimum height (10mm)
+    newPaneHeights[otherPaneIndex] = Math.max(10, (paneHeights[otherPaneIndex] || 0) - difference);
+    
+    setPaneHeights(newPaneHeights);
+  };
+
+  // Handle Transom layout height change (works for both top and bottom transom)
+  const handleTransomHeightChange = (index: number, newHeight: number, isTopTransom: boolean) => {
+    const oldHeight = paneHeights[index] || 0;
+    const difference = newHeight - oldHeight;
+    
+    const newPaneHeights = [...paneHeights];
+    newPaneHeights[index] = newHeight;
+    
+    if ((isTopTransom && index === 0) || (!isTopTransom && index === 3)) {
+      // If changing transom pane, adjust all other panes proportionally
+      const mainSectionIndex = isTopTransom ? 1 : 0;
+      const mainSectionHeight = paneHeights[mainSectionIndex] || 0;
+      const newMainSectionHeight = Math.max(30, mainSectionHeight - difference);
+      
+      // For top transom, adjust panes 1, 2, 3 equally
+      // For bottom transom, adjust panes 0, 1, 2 equally
+      const startIdx = isTopTransom ? 1 : 0;
+      const endIdx = isTopTransom ? 3 : 2;
+      
+      for (let i = startIdx; i <= endIdx; i++) {
+        newPaneHeights[i] = Math.max(10, newMainSectionHeight / (endIdx - startIdx + 1));
+      }
+    } else {
+      // If changing a non-transom pane, adjust the transom
+      const transomIndex = isTopTransom ? 0 : 3;
+      newPaneHeights[transomIndex] = Math.max(10, (paneHeights[transomIndex] || 0) - difference);
+      
+      // Keep all non-transom panes the same height
+      const startIdx = isTopTransom ? 1 : 0;
+      const endIdx = isTopTransom ? 3 : 2;
+      
+      for (let i = startIdx; i <= endIdx; i++) {
+        if (i !== index) {
+          newPaneHeights[i] = newPaneHeights[index];
+        }
+      }
+    }
+    
+    setPaneHeights(newPaneHeights);
+  };
+
+  // No longer need tab change handler as width and height controls are combined
+
+  return (
+    <Box sx={{ p: 3, maxWidth: '1200px', margin: '0 auto' }}>
+      <Typography variant="h4" component="h1" gutterBottom>
+        Window Configuration
+      </Typography>
+
+      <Grid container spacing={4}>
+        {/* Left column - JSON Input */}
+        <Grid item xs={12} md={6}>
+          <Card elevation={3}>
+            <CardContent>
+              <Typography variant="h6" gutterBottom>
+                Edit JSON Configuration:
+              </Typography>
+              <TextField
+                fullWidth
+                multiline
+                rows={15}
+                variant="outlined"
+                value={jsonInput}
+                onChange={handleJsonChange}
+                error={!!error}
+                helperText={error}
+                sx={{ 
+                  fontFamily: 'monospace',
+                  '& .MuiOutlinedInput-root': {
+                    '& textarea': {
+                      fontFamily: 'monospace',
+                    },
+                  }, 
+                }}
+              />
+              <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 3 }}>
+                <Button
+                  variant="outlined"
+                  color="secondary"
+                  onClick={resetToDefault}
+                >
+                  RESET TO DEFAULT
+                </Button>
+                <Button
+                  variant="contained"
+                  color="primary"
+                  onClick={visualizeWindow}
+                >
+                  VISUALIZE WINDOW
+                </Button>
+              </Box>
+            </CardContent>
+          </Card>
+        </Grid>
+
+        {/* Right column - Preview */}
+        <Grid item xs={12} md={6}>
+          <Card elevation={3}>
+            <CardContent>
+              <Typography variant="h6" gutterBottom>
+                Preview:
+              </Typography>
+              {config ? (
+                <>
+                  <Box
+                    sx={{
+                      display: 'flex',
+                      justifyContent: 'center',
+                      alignItems: 'center',
+                      p: 3,
+                      bgcolor: '#f9f9f9',
+                      borderRadius: 1,
+                      minHeight: '300px',
+                      mb: 3,
+                    }}
+                  >
+                    <WindowPreview config={config} />
+                  </Box>
+                  
+                  {/* Dimension customization section */}
+                  <Box sx={{ mt: 2, p: 2, bgcolor: '#f3f3f3', borderRadius: 1 }}>
+                    <Typography variant="subtitle1" gutterBottom fontWeight="bold">
+                      CLASSIFICATION
+                    </Typography>
+                    <Typography variant="body2" gutterBottom color="text.secondary">
+                      Please make the desired arrangement of your window
+                    </Typography>
+                    
+                    {/* Dimension title */}
+                    <Box sx={{ borderBottom: 1, borderColor: 'divider', mb: 2 }}>
+                      <Typography variant="subtitle2" align="center" sx={{ pb: 1 }}>
+                        Width and Height Adjustments
+                      </Typography>
+                    </Box>
+                    
+                    <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', mt: 2 }}>
+                        <Box>
+                          <Typography variant="subtitle1" gutterBottom>
+                            Adjust Dimensions
+                          </Typography>
+                          <Divider sx={{ mb: 2 }} />
+                          
+                          {/* Render different width inputs based on frameLayout */}
+                          {config.frameLayout === 'single' && (
+                        <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: '100%' }}>
+                          <Box 
+                            sx={{ 
+                              width: '100px', 
+                              height: '150px', 
+                              border: '1px solid #ccc',
+                              borderRadius: '4px',
+                              bgcolor: '#e6f7ff',
+                              display: 'flex',
+                              justifyContent: 'center',
+                              alignItems: 'center',
+                              mb: 2
+                            }}
+                          >
+                            +
+                          </Box>
+                          <Box sx={{ display: 'flex', gap: 2, mb: 1 }}>
+                            <TextField
+                              size="small"
+                              type="number"
+                              label="Width"
+                              value={paneWidths[0] || 0}
+                              onChange={(e) => {
+                                const newWidth = Math.max(10, Number(e.target.value));
+                                handleSinglePaneWidthChange(newWidth);
+                              }}
+                              InputProps={{
+                                endAdornment: <Typography variant="caption">mm</Typography>,
+                                sx: { width: '120px' }
+                              }}
+                            />
+                            <TextField
+                              size="small"
+                              type="number"
+                              label="Height"
+                              value={paneHeights[0] || 0}
+                              onChange={(e) => {
+                                const newHeight = Math.max(10, Number(e.target.value));
+                                handleSinglePaneHeightChange(newHeight);
+                              }}
+                              InputProps={{
+                                endAdornment: <Typography variant="caption">mm</Typography>,
+                                sx: { width: '120px' }
+                              }}
+                            />
+                          </Box>
+                        </Box>
+                      )}
+                      
+                      {config.frameLayout === 'double-horizontal' && (
+                        <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: '100%' }}>
+                          <Box sx={{ display: 'flex', justifyContent: 'center', mb: 2 }}>
+                            <Box 
+                              sx={{ 
+                                width: `${80 * (paneWidths[0] || 1) / (paneWidths[1] || 1)}px`, 
+                                height: '150px', 
+                                border: '1px solid #ccc',
+                                borderRadius: '4px',
+                                bgcolor: '#e6f7ff',
+                                display: 'flex',
+                                justifyContent: 'center',
+                                alignItems: 'center',
+                                mr: 1
+                              }}
+                            >
+                              +
+                            </Box>
+                            <Box 
+                              sx={{ 
+                                width: `${80 * (paneWidths[1] || 1) / (paneWidths[0] || 1)}px`, 
+                                height: '150px', 
+                                border: '1px solid #ccc',
+                                borderRadius: '4px',
+                                bgcolor: '#e6f7ff',
+                                display: 'flex',
+                                justifyContent: 'center',
+                                alignItems: 'center',
+                                ml: 1
+                              }}
+                            >
+                              +
+                            </Box>
+                          </Box>
+                          <Box sx={{ display: 'flex', justifyContent: 'space-around', width: '100%', flexWrap: 'wrap', gap: 2 }}>
+                            <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', mb: 2 }}>
+                              <Typography variant="caption" gutterBottom>Left Pane</Typography>
+                              <TextField
+                                size="small"
+                                type="number"
+                                label="Width"
+                                value={paneWidths[0] || 0}
+                                onChange={(e) => {
+                                  const newWidth = Math.max(10, Number(e.target.value));
+                                  handleDoubleHorizontalWidthChange(0, newWidth);
+                                }}
+                                InputProps={{
+                                  endAdornment: <Typography variant="caption">mm</Typography>,
+                                  sx: { width: '120px', mb: 1 }
+                                }}
+                              />
+                              <TextField
+                                size="small"
+                                type="number"
+                                label="Height"
+                                value={paneHeights[0] || 0}
+                                onChange={(e) => {
+                                  const newHeight = Math.max(10, Number(e.target.value));
+                                  handleSinglePaneHeightChange(newHeight);
+                                }}
+                                InputProps={{
+                                  endAdornment: <Typography variant="caption">mm</Typography>,
+                                  sx: { width: '120px' }
+                                }}
+                              />
+                            </Box>
+                            <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', mb: 2 }}>
+                              <Typography variant="caption" gutterBottom>Right Pane</Typography>
+                              <TextField
+                                size="small"
+                                type="number"
+                                label="Width"
+                                value={paneWidths[1] || 0}
+                                onChange={(e) => {
+                                  const newWidth = Math.max(10, Number(e.target.value));
+                                  handleDoubleHorizontalWidthChange(1, newWidth);
+                                }}
+                                InputProps={{
+                                  endAdornment: <Typography variant="caption">mm</Typography>,
+                                  sx: { width: '120px', mb: 1 }
+                                }}
+                              />
+                              <TextField
+                                size="small"
+                                type="number"
+                                label="Height"
+                                value={paneHeights[1] || 0}
+                                onChange={(e) => {
+                                  const newHeight = Math.max(10, Number(e.target.value));
+                                  handleSinglePaneHeightChange(newHeight);
+                                }}
+                                InputProps={{
+                                  endAdornment: <Typography variant="caption">mm</Typography>,
+                                  sx: { width: '120px' }
+                                }}
+                              />
+                            </Box>
+                          </Box>
+                          <Box sx={{ mt: 3, width: '100%', maxWidth: '250px', textAlign: 'center' }}>
+                            <TextField
+                              size="small"
+                              type="number"
+                              value={paneWidths.reduce((sum, width) => sum + width, 0)}
+                              label="Total Width"
+                              variant="outlined"
+                              disabled
+                              InputProps={{
+                                endAdornment: <Typography variant="caption">mm</Typography>,
+                                sx: { width: '150px' }
+                              }}
+                            />
+                          </Box>
+                        </Box>
+                      )}
+                      
+                      {config.frameLayout === 'triple-horizontal' && (
+                        <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: '100%' }}>
+                          <Box sx={{ display: 'flex', justifyContent: 'center', mb: 2 }}>
+                            <Box 
+                              sx={{ 
+                                width: `${60 * (paneWidths[0] || 1) / ((paneWidths[1] || 1) + (paneWidths[2] || 1)) * 2}px`, 
+                                height: '150px', 
+                                border: '1px solid #ccc',
+                                borderRadius: '4px',
+                                bgcolor: '#e6f7ff',
+                                display: 'flex',
+                                justifyContent: 'center',
+                                alignItems: 'center',
+                                mx: 0.5
+                              }}
+                            >
+                              +
+                            </Box>
+                            <Box 
+                              sx={{ 
+                                width: `${60 * (paneWidths[1] || 1) / ((paneWidths[0] || 1) + (paneWidths[2] || 1)) * 2}px`, 
+                                height: '150px', 
+                                border: '1px solid #ccc',
+                                borderRadius: '4px',
+                                bgcolor: '#e6f7ff',
+                                display: 'flex',
+                                justifyContent: 'center',
+                                alignItems: 'center',
+                                mx: 0.5
+                              }}
+                            >
+                              +
+                            </Box>
+                            <Box 
+                              sx={{ 
+                                width: `${60 * (paneWidths[2] || 1) / ((paneWidths[0] || 1) + (paneWidths[1] || 1)) * 2}px`, 
+                                height: '150px', 
+                                border: '1px solid #ccc',
+                                borderRadius: '4px',
+                                bgcolor: '#e6f7ff',
+                                display: 'flex',
+                                justifyContent: 'center',
+                                alignItems: 'center',
+                                mx: 0.5
+                              }}
+                            >
+                              +
+                            </Box>
+                          </Box>
+                          <Box sx={{ display: 'flex', justifyContent: 'space-around', width: '100%', maxWidth: '300px', flexWrap: 'wrap' }}>
+                            <TextField
+                              size="small"
+                              type="number"
+                              value={paneWidths[0] || 0}
+                              onChange={(e) => {
+                                const newWidth = Math.max(10, Number(e.target.value));
+                                handleTripleHorizontalWidthChange(0, newWidth);
+                              }}
+                              InputProps={{
+                                endAdornment: <Typography variant="caption">mm</Typography>,
+                                sx: { width: '90px', m: 0.5 }
+                              }}
+                            />
+                            <TextField
+                              size="small"
+                              type="number"
+                              value={paneWidths[1] || 0}
+                              onChange={(e) => {
+                                const newWidth = Math.max(10, Number(e.target.value));
+                                handleTripleHorizontalWidthChange(1, newWidth);
+                              }}
+                              InputProps={{
+                                endAdornment: <Typography variant="caption">mm</Typography>,
+                                sx: { width: '90px', m: 0.5 }
+                              }}
+                            />
+                            <TextField
+                              size="small"
+                              type="number"
+                              value={paneWidths[2] || 0}
+                              onChange={(e) => {
+                                const newWidth = Math.max(10, Number(e.target.value));
+                                handleTripleHorizontalWidthChange(2, newWidth);
+                              }}
+                              InputProps={{
+                                endAdornment: <Typography variant="caption">mm</Typography>,
+                                sx: { width: '90px', m: 0.5 }
+                              }}
+                            />
+                          </Box>
+                          <Box sx={{ mt: 3, width: '100%', maxWidth: '250px', textAlign: 'center' }}>
+                            <TextField
+                              size="small"
+                              type="number"
+                              value={paneWidths.reduce((sum, width) => sum + width, 0)}
+                              label="Total Width"
+                              variant="outlined"
+                              disabled
+                              InputProps={{
+                                endAdornment: <Typography variant="caption">mm</Typography>,
+                                sx: { width: '150px' }
+                              }}
+                            />
+                          </Box>
+                        </Box>
+                      )}
+                      
+                      {/* For other layouts, add more conditions and UI elements */}
+                      {/* T-Layout Width */}
+                      {config.frameLayout === 't-layout' && (
+                        <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: '100%' }}>
+                          <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', mb: 2 }}>
+                            <Box sx={{ 
+                              width: '150px', 
+                              height: '60px', 
+                              bgcolor: '#e0e0e0',
+                              display: 'flex',
+                              justifyContent: 'center',
+                              alignItems: 'center',
+                              border: '1px solid #bbb',
+                              borderRadius: '4px 4px 0 0'
+                            }}>
+                              <Typography>Top</Typography>
+                            </Box>
+                            <Box sx={{ display: 'flex', width: '150px' }}>
+                              <Box sx={{ 
+                                width: '75px', 
+                                height: '80px', 
+                                bgcolor: '#e0e0e0',
+                                display: 'flex',
+                                justifyContent: 'center',
+                                alignItems: 'center',
+                                border: '1px solid #bbb',
+                                borderTop: 'none',
+                                borderRight: 'none',
+                                borderRadius: '0 0 0 4px'
+                              }}>
+                                <Typography>BL</Typography>
+                              </Box>
+                              <Box sx={{ 
+                                width: '75px', 
+                                height: '80px', 
+                                bgcolor: '#e0e0e0',
+                                display: 'flex',
+                                justifyContent: 'center',
+                                alignItems: 'center',
+                                border: '1px solid #bbb',
+                                borderTop: 'none',
+                                borderRadius: '0 0 4px 0'
+                              }}>
+                                <Typography>BR</Typography>
+                              </Box>
+                            </Box>
+                          </Box>
+                          <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: '100%' }}>
+                            <TextField
+                              size="small"
+                              type="number"
+                              value={paneWidths[0] || 0}
+                              label="Top Width"
+                              onChange={(e) => {
+                                const newWidth = Math.max(10, Number(e.target.value));
+                                // Update width logic for T-Layout
+                                const difference = newWidth - (paneWidths[0] || 0);
+                                const newPaneWidths = [...paneWidths];
+                                newPaneWidths[0] = newWidth;
+                                setPaneWidths(newPaneWidths);
+                              }}
+                              InputProps={{
+                                endAdornment: <Typography variant="caption">mm</Typography>,
+                                sx: { width: '150px', m: 0.5 }
+                              }}
+                            />
+                            <Box sx={{ display: 'flex', justifyContent: 'space-between', width: '100%', maxWidth: '340px', mt: 1 }}>
+                              <TextField
+                                size="small"
+                                type="number"
+                                value={paneWidths[1] || 0}
+                                label="Bottom Left"
+                                onChange={(e) => {
+                                  const newWidth = Math.max(10, Number(e.target.value));
+                                  // Update width logic for T-Layout bottom left
+                                  const oldWidth = paneWidths[1] || 0;
+                                  const difference = newWidth - oldWidth;
+                                  
+                                  const newPaneWidths = [...paneWidths];
+                                  newPaneWidths[1] = newWidth;
+                                  // Adjust right bottom pane to maintain total width
+                                  newPaneWidths[2] = Math.max(10, (paneWidths[2] || 0) - difference);
+                                  
+                                  setPaneWidths(newPaneWidths);
+                                }}
+                                InputProps={{
+                                  endAdornment: <Typography variant="caption">mm</Typography>,
+                                  sx: { width: '150px', m: 0.5 }
+                                }}
+                              />
+                              <TextField
+                                size="small"
+                                type="number"
+                                value={paneWidths[2] || 0}
+                                label="Bottom Right"
+                                onChange={(e) => {
+                                  const newWidth = Math.max(10, Number(e.target.value));
+                                  // Update width logic for T-Layout bottom right
+                                  const oldWidth = paneWidths[2] || 0;
+                                  const difference = newWidth - oldWidth;
+                                  
+                                  const newPaneWidths = [...paneWidths];
+                                  newPaneWidths[2] = newWidth;
+                                  // Adjust left bottom pane to maintain total width
+                                  newPaneWidths[1] = Math.max(10, (paneWidths[1] || 0) - difference);
+                                  
+                                  setPaneWidths(newPaneWidths);
+                                }}
+                                InputProps={{
+                                  endAdornment: <Typography variant="caption">mm</Typography>,
+                                  sx: { width: '150px', m: 0.5 }
+                                }}
+                              />
+                            </Box>
+                          </Box>
+                          <Box sx={{ mt: 3, width: '100%', textAlign: 'center' }}>
+                            <TextField
+                              size="small"
+                              type="number"
+                              value={totalWidth}
+                              label="Total Width"
+                              variant="outlined"
+                              disabled
+                              InputProps={{
+                                endAdornment: <Typography variant="caption">mm</Typography>,
+                                sx: { width: '150px' }
+                              }}
+                            />
+                          </Box>
+                        </Box>
+                      )}
+
+                      {/* Double-Vertical Width (just one column) */}
+                      {(config.frameLayout === 'double-vertical' || config.frameLayout === 'double-vertical-reversed') && (
+                        <Box sx={{ textAlign: 'center' }}>
+                          <Typography variant="body2">
+                            For vertical layouts, width is uniform across panes.
+                          </Typography>
+                          <Box sx={{ mt: 3, width: '100%', textAlign: 'center' }}>
+                            <TextField
+                              size="small"
+                              type="number"
+                              value={totalWidth}
+                              label="Total Width"
+                              variant="outlined"
+                              disabled
+                              InputProps={{
+                                endAdornment: <Typography variant="caption">mm</Typography>,
+                                sx: { width: '150px' }
+                              }}
+                            />
+                          </Box>
+                        </Box>
+                      )}
+
+                      {/* For other layouts that aren't explicitly handled */}
+                      {!['single', 'double-horizontal', 'triple-horizontal', 'double-vertical', 'double-vertical-reversed', 't-layout'].includes(config.frameLayout) && (
+                        <Typography>Width controls for {config.frameLayout} layout will be implemented soon.</Typography>
+                      )}
+                        </Box>
+
+                      {/* HEIGHT TAB */}
+                      {(config.frameLayout === 'double-vertical' || config.frameLayout === 'double-vertical-reversed') && (
+                        <Box>
+                          <Typography variant="subtitle1" gutterBottom>
+                            Adjust Pane Heights
+                          </Typography>
+                          <Divider sx={{ mb: 2 }} />
+                          
+                          {/* Single Pane Height */}
+                          {config && ['single'].includes(config.frameLayout) && (
+                            <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                              <Box sx={{ 
+                                width: '80px', 
+                                height: '120px', 
+                                bgcolor: '#e0e0e0',
+                                display: 'flex',
+                                justifyContent: 'center',
+                                alignItems: 'center',
+                                mb: 2,
+                                border: '1px solid #bbb',
+                                borderRadius: 1
+                              }}>
+                                <Typography>Single</Typography>
+                              </Box>
+                              <TextField
+                                size="small"
+                                type="number"
+                                value={paneHeights[0] || 0}
+                                onChange={(e) => {
+                                  const newHeight = Math.max(10, Number(e.target.value));
+                                  handleSinglePaneHeightChange(newHeight);
+                                }}
+                                InputProps={{
+                                  endAdornment: <Typography variant="caption">mm</Typography>,
+                                  sx: { width: '150px' }
+                                }}
+                              />
+                              <TextField
+                                size="small"
+                                type="number"
+                                value={totalHeight}
+                                label="Total Height"
+                                variant="outlined"
+                                disabled
+                                sx={{ mt: 3, width: '150px' }}
+                                InputProps={{
+                                  endAdornment: <Typography variant="caption">mm</Typography>
+                                }}
+                              />
+                            </Box>
+                          )}
+                          
+                          {/* Double Vertical Height */}
+                          {config && ['double-vertical', 'double-vertical-reversed'].includes(config.frameLayout) && (
+                            <Box>
+                              <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', mb: 2 }}>
+                                <Box sx={{ 
+                                  width: '80px', 
+                                  height: Math.max(40, (paneHeights[0] / totalHeight) * 180) + 'px', 
+                                  bgcolor: '#e0e0e0',
+                                  display: 'flex',
+                                  justifyContent: 'center',
+                                  alignItems: 'center',
+                                  border: '1px solid #bbb',
+                                  borderBottom: 'none',
+                                  borderRadius: '4px 4px 0 0'
+                                }}>
+                                  <Typography>Top</Typography>
+                                </Box>
+                                <Box sx={{ 
+                                  width: '80px', 
+                                  height: Math.max(40, (paneHeights[1] / totalHeight) * 180) + 'px', 
+                                  bgcolor: '#e0e0e0',
+                                  display: 'flex',
+                                  justifyContent: 'center',
+                                  alignItems: 'center',
+                                  border: '1px solid #bbb',
+                                  borderRadius: '0 0 4px 4px'
+                                }}>
+                                  <Typography>Bottom</Typography>
+                                </Box>
+                              </Box>
+                              <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1 }}>
+                                <TextField
+                                  size="small"
+                                  type="number"
+                                  value={paneHeights[0] || 0}
+                                  label="Top"
+                                  onChange={(e) => {
+                                    const newHeight = Math.max(10, Number(e.target.value));
+                                    handleDoubleVerticalHeightChange(0, newHeight);
+                                  }}
+                                  InputProps={{
+                                    endAdornment: <Typography variant="caption">mm</Typography>,
+                                    sx: { width: '150px', m: 0.5 }
+                                  }}
+                                />
+                                <TextField
+                                  size="small"
+                                  type="number"
+                                  value={paneHeights[1] || 0}
+                                  label="Bottom"
+                                  onChange={(e) => {
+                                    const newHeight = Math.max(10, Number(e.target.value));
+                                    handleDoubleVerticalHeightChange(1, newHeight);
+                                  }}
+                                  InputProps={{
+                                    endAdornment: <Typography variant="caption">mm</Typography>,
+                                    sx: { width: '150px', m: 0.5 }
+                                  }}
+                                />
+                              </Box>
+                              <Box sx={{ mt: 3, width: '100%', textAlign: 'center' }}>
+                                <TextField
+                                  size="small"
+                                  type="number"
+                                  value={totalHeight}
+                                  label="Total Height"
+                                  variant="outlined"
+                                  disabled
+                                  InputProps={{
+                                    endAdornment: <Typography variant="caption">mm</Typography>,
+                                    sx: { width: '150px' }
+                                  }}
+                                />
+                              </Box>
+                            </Box>
+                          )}
+                          
+                          {/* T-Layout Height */}
+                          {config.frameLayout === 't-layout' && (
+                            <Box>
+                              <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', mb: 2 }}>
+                                <Box sx={{ 
+                                  width: '150px', 
+                                  height: Math.max(40, (paneHeights[0] / totalHeight) * 180) + 'px', 
+                                  bgcolor: '#e0e0e0',
+                                  display: 'flex',
+                                  justifyContent: 'center',
+                                  alignItems: 'center',
+                                  border: '1px solid #bbb',
+                                  borderRadius: '4px 4px 0 0',
+                                  mb: 1
+                                }}>
+                                  <Typography>Top</Typography>
+                                </Box>
+                                <Box sx={{ display: 'flex', width: '150px' }}>
+                                  <Box sx={{ 
+                                    width: '75px', 
+                                    height: Math.max(40, (paneHeights[1] / totalHeight) * 180) + 'px', 
+                                    bgcolor: '#e0e0e0',
+                                    display: 'flex',
+                                    justifyContent: 'center',
+                                    alignItems: 'center',
+                                    border: '1px solid #bbb',
+                                    borderRight: 'none',
+                                    borderRadius: '0 0 0 4px'
+                                  }}>
+                                    <Typography>BL</Typography>
+                                  </Box>
+                                  <Box sx={{ 
+                                    width: '75px', 
+                                    height: Math.max(40, (paneHeights[2] / totalHeight) * 180) + 'px', 
+                                    bgcolor: '#e0e0e0',
+                                    display: 'flex',
+                                    justifyContent: 'center',
+                                    alignItems: 'center',
+                                    border: '1px solid #bbb',
+                                    borderRadius: '0 0 4px 0'
+                                  }}>
+                                    <Typography>BR</Typography>
+                                  </Box>
+                                </Box>
+                              </Box>
+                              <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1 }}>
+                                <TextField
+                                  size="small"
+                                  type="number"
+                                  value={paneHeights[0] || 0}
+                                  label="Top Height"
+                                  onChange={(e) => {
+                                    const newHeight = Math.max(10, Number(e.target.value));
+                                    handleTLayoutHeightChange(0, newHeight);
+                                  }}
+                                  InputProps={{
+                                    endAdornment: <Typography variant="caption">mm</Typography>,
+                                    sx: { width: '150px', m: 0.5 }
+                                  }}
+                                />
+                                <TextField
+                                  size="small"
+                                  type="number"
+                                  value={paneHeights[1] || 0}
+                                  label="Bottom Height"
+                                  onChange={(e) => {
+                                    const newHeight = Math.max(10, Number(e.target.value));
+                                    handleTLayoutHeightChange(1, newHeight);
+                                  }}
+                                  InputProps={{
+                                    endAdornment: <Typography variant="caption">mm</Typography>,
+                                    sx: { width: '150px', m: 0.5 }
+                                  }}
+                                />
+                              </Box>
+                              <Box sx={{ mt: 3, width: '100%', textAlign: 'center' }}>
+                                <TextField
+                                  size="small"
+                                  type="number"
+                                  value={totalHeight}
+                                  label="Total Height"
+                                  variant="outlined"
+                                  disabled
+                                  InputProps={{
+                                    endAdornment: <Typography variant="caption">mm</Typography>,
+                                    sx: { width: '150px' }
+                                  }}
+                                />
+                              </Box>
+                            </Box>
+                          )}
+
+                          {/* Double-Vertical Height (For Small Top) */}
+                          {config.frameLayout === 'double-vertical' && (
+                            <Box>
+                              <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', mb: 2 }}>
+                                <Box sx={{ 
+                                  width: '80px', 
+                                  height: Math.max(40, (paneHeights[0] / totalHeight) * 180) + 'px', 
+                                  bgcolor: '#e0e0e0',
+                                  display: 'flex',
+                                  justifyContent: 'center',
+                                  alignItems: 'center',
+                                  border: '1px solid #bbb',
+                                  borderBottom: 'none',
+                                  borderRadius: '4px 4px 0 0'
+                                }}>
+                                  <Typography>Top</Typography>
+                                </Box>
+                                <Box sx={{ 
+                                  width: '80px', 
+                                  height: Math.max(40, (paneHeights[1] / totalHeight) * 180) + 'px', 
+                                  bgcolor: '#e0e0e0',
+                                  display: 'flex',
+                                  justifyContent: 'center',
+                                  alignItems: 'center',
+                                  border: '1px solid #bbb',
+                                  borderRadius: '0 0 4px 4px'
+                                }}>
+                                  <Typography>Bottom</Typography>
+                                </Box>
+                              </Box>
+                              <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1 }}>
+                                <TextField
+                                  size="small"
+                                  type="number"
+                                  value={paneHeights[0] || 0}
+                                  label="Top Height"
+                                  onChange={(e) => {
+                                    const newHeight = Math.max(10, Number(e.target.value));
+                                    handleDoubleVerticalSmallTopHeightChange(0, newHeight);
+                                  }}
+                                  InputProps={{
+                                    endAdornment: <Typography variant="caption">mm</Typography>,
+                                    sx: { width: '150px', m: 0.5 }
+                                  }}
+                                />
+                                <TextField
+                                  size="small"
+                                  type="number"
+                                  value={paneHeights[1] || 0}
+                                  label="Bottom Height"
+                                  onChange={(e) => {
+                                    const newHeight = Math.max(10, Number(e.target.value));
+                                    handleDoubleVerticalSmallTopHeightChange(1, newHeight);
+                                  }}
+                                  InputProps={{
+                                    endAdornment: <Typography variant="caption">mm</Typography>,
+                                    sx: { width: '150px', m: 0.5 }
+                                  }}
+                                />
+                              </Box>
+                              <Box sx={{ mt: 3, width: '100%', textAlign: 'center' }}>
+                                <TextField
+                                  size="small"
+                                  type="number"
+                                  value={totalHeight}
+                                  label="Total Height"
+                                  variant="outlined"
+                                  disabled
+                                  InputProps={{
+                                    endAdornment: <Typography variant="caption">mm</Typography>,
+                                    sx: { width: '150px' }
+                                  }}
+                                />
+                              </Box>
+                            </Box>
+                          )}
+
+                          {/* Double-Vertical-Reversed Height (For Small Bottom) */}
+                          {config.frameLayout === 'double-vertical-reversed' && (
+                            <Box>
+                              <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', mb: 2 }}>
+                                <Box sx={{ 
+                                  width: '80px', 
+                                  height: Math.max(40, (paneHeights[0] / totalHeight) * 180) + 'px', 
+                                  bgcolor: '#e0e0e0',
+                                  display: 'flex',
+                                  justifyContent: 'center',
+                                  alignItems: 'center',
+                                  border: '1px solid #bbb',
+                                  borderBottom: 'none',
+                                  borderRadius: '4px 4px 0 0'
+                                }}>
+                                  <Typography>Top</Typography>
+                                </Box>
+                                <Box sx={{ 
+                                  width: '80px', 
+                                  height: Math.max(40, (paneHeights[1] / totalHeight) * 180) + 'px', 
+                                  bgcolor: '#e0e0e0',
+                                  display: 'flex',
+                                  justifyContent: 'center',
+                                  alignItems: 'center',
+                                  border: '1px solid #bbb',
+                                  borderRadius: '0 0 4px 4px'
+                                }}>
+                                  <Typography>Bottom</Typography>
+                                </Box>
+                              </Box>
+                              <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1 }}>
+                                <TextField
+                                  size="small"
+                                  type="number"
+                                  value={paneHeights[0] || 0}
+                                  label="Top Height"
+                                  onChange={(e) => {
+                                    const newHeight = Math.max(10, Number(e.target.value));
+                                    handleDoubleVerticalSmallBottomHeightChange(0, newHeight);
+                                  }}
+                                  InputProps={{
+                                    endAdornment: <Typography variant="caption">mm</Typography>,
+                                    sx: { width: '150px', m: 0.5 }
+                                  }}
+                                />
+                                <TextField
+                                  size="small"
+                                  type="number"
+                                  value={paneHeights[1] || 0}
+                                  label="Bottom Height"
+                                  onChange={(e) => {
+                                    const newHeight = Math.max(10, Number(e.target.value));
+                                    handleDoubleVerticalSmallBottomHeightChange(1, newHeight);
+                                  }}
+                                  InputProps={{
+                                    endAdornment: <Typography variant="caption">mm</Typography>,
+                                    sx: { width: '150px', m: 0.5 }
+                                  }}
+                                />
+                              </Box>
+                              <Box sx={{ mt: 3, width: '100%', textAlign: 'center' }}>
+                                <TextField
+                                  size="small"
+                                  type="number"
+                                  value={totalHeight}
+                                  label="Total Height"
+                                  variant="outlined"
+                                  disabled
+                                  InputProps={{
+                                    endAdornment: <Typography variant="caption">mm</Typography>,
+                                    sx: { width: '150px' }
+                                  }}
+                                />
+                              </Box>
+                            </Box>
+                          )}
+
+                          {/* Double-Top Height */}
+                          {config && ['double-top'].includes(config.frameLayout) && (
+                            <Box>
+                              <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', mb: 2 }}>
+                                <Box sx={{ display: 'flex', width: '150px' }}>
+                                  <Box sx={{ 
+                                    width: '75px', 
+                                    height: Math.max(30, (paneHeights[0] / totalHeight) * 180) + 'px', 
+                                    bgcolor: '#e0e0e0',
+                                    display: 'flex',
+                                    justifyContent: 'center',
+                                    alignItems: 'center',
+                                    border: '1px solid #bbb',
+                                    borderRight: 'none',
+                                    borderRadius: '4px 0 0 0'
+                                  }}>
+                                    <Typography>TL</Typography>
+                                  </Box>
+                                  <Box sx={{ 
+                                    width: '75px', 
+                                    height: Math.max(30, (paneHeights[0] / totalHeight) * 180) + 'px', 
+                                    bgcolor: '#e0e0e0',
+                                    display: 'flex',
+                                    justifyContent: 'center',
+                                    alignItems: 'center',
+                                    border: '1px solid #bbb',
+                                    borderRadius: '0 4px 0 0'
+                                  }}>
+                                    <Typography>TR</Typography>
+                                  </Box>
+                                </Box>
+                                <Box sx={{ 
+                                  width: '150px', 
+                                  height: Math.max(40, (paneHeights[2] / totalHeight) * 180) + 'px', 
+                                  bgcolor: '#e0e0e0',
+                                  display: 'flex',
+                                  justifyContent: 'center',
+                                  alignItems: 'center',
+                                  border: '1px solid #bbb',
+                                  borderTop: 'none',
+                                  borderRadius: '0 0 4px 4px'
+                                }}>
+                                  <Typography>Bottom</Typography>
+                                </Box>
+                              </Box>
+                              <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1 }}>
+                                <TextField
+                                  size="small"
+                                  type="number"
+                                  value={paneHeights[0] || 0}
+                                  label="Top Height"
+                                  onChange={(e) => {
+                                    const newHeight = Math.max(10, Number(e.target.value));
+                                    handleDoubleTopHeightChange(0, newHeight);
+                                  }}
+                                  InputProps={{
+                                    endAdornment: <Typography variant="caption">mm</Typography>,
+                                    sx: { width: '150px', m: 0.5 }
+                                  }}
+                                />
+                                <TextField
+                                  size="small"
+                                  type="number"
+                                  value={paneHeights[2] || 0}
+                                  label="Bottom Height"
+                                  onChange={(e) => {
+                                    const newHeight = Math.max(10, Number(e.target.value));
+                                    handleDoubleTopHeightChange(1, newHeight);
+                                  }}
+                                  InputProps={{
+                                    endAdornment: <Typography variant="caption">mm</Typography>,
+                                    sx: { width: '150px', m: 0.5 }
+                                  }}
+                                />
+                              </Box>
+                              <Box sx={{ mt: 3, width: '100%', textAlign: 'center' }}>
+                                <TextField
+                                  size="small"
+                                  type="number"
+                                  value={totalHeight}
+                                  label="Total Height"
+                                  variant="outlined"
+                                  disabled
+                                  InputProps={{
+                                    endAdornment: <Typography variant="caption">mm</Typography>,
+                                    sx: { width: '150px' }
+                                  }}
+                                />
+                              </Box>
+                            </Box>
+                          )}
+
+                          {/* Top-Transom Height */}
+                          {config && ['top-transom'].includes(config.frameLayout) && (
+                            <Box>
+                              <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', mb: 2 }}>
+                                <Box sx={{ 
+                                  width: '150px', 
+                                  height: Math.max(30, (paneHeights[0] / totalHeight) * 180) + 'px', 
+                                  bgcolor: '#e0e0e0',
+                                  display: 'flex',
+                                  justifyContent: 'center',
+                                  alignItems: 'center',
+                                  border: '1px solid #bbb',
+                                  borderRadius: '4px 4px 0 0'
+                                }}>
+                                  <Typography>Transom</Typography>
+                                </Box>
+                                <Box sx={{ display: 'flex', width: '150px' }}>
+                                  <Box sx={{ 
+                                    width: '50px', 
+                                    height: Math.max(40, (paneHeights[1] / totalHeight) * 180) + 'px',
+                                    bgcolor: '#e0e0e0',
+                                    display: 'flex',
+                                    justifyContent: 'center',
+                                    alignItems: 'center',
+                                    border: '1px solid #bbb',
+                                    borderTop: 'none',
+                                    borderRight: 'none',
+                                    borderRadius: '0 0 0 4px'
+                                  }}>
+                                    <Typography>L</Typography>
+                                  </Box>
+                                  <Box sx={{ 
+                                    width: '50px', 
+                                    height: Math.max(40, (paneHeights[1] / totalHeight) * 180) + 'px',
+                                    bgcolor: '#e0e0e0',
+                                    display: 'flex',
+                                    justifyContent: 'center',
+                                    alignItems: 'center',
+                                    border: '1px solid #bbb',
+                                    borderTop: 'none',
+                                    borderRight: 'none'
+                                  }}>
+                                    <Typography>M</Typography>
+                                  </Box>
+                                  <Box sx={{ 
+                                    width: '50px', 
+                                    height: Math.max(40, (paneHeights[1] / totalHeight) * 180) + 'px',
+                                    bgcolor: '#e0e0e0',
+                                    display: 'flex',
+                                    justifyContent: 'center',
+                                    alignItems: 'center',
+                                    border: '1px solid #bbb',
+                                    borderTop: 'none',
+                                    borderRadius: '0 0 4px 0'
+                                  }}>
+                                    <Typography>R</Typography>
+                                  </Box>
+                                </Box>
+                              </Box>
+                              <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1 }}>
+                                <TextField
+                                  size="small"
+                                  type="number"
+                                  value={paneHeights[0] || 0}
+                                  label="Transom Height"
+                                  onChange={(e) => {
+                                    const newHeight = Math.max(10, Number(e.target.value));
+                                    handleTransomHeightChange(0, newHeight, true);
+                                  }}
+                                  InputProps={{
+                                    endAdornment: <Typography variant="caption">mm</Typography>,
+                                    sx: { width: '150px', m: 0.5 }
+                                  }}
+                                />
+                                <TextField
+                                  size="small"
+                                  type="number"
+                                  value={paneHeights[1] || 0}
+                                  label="Main Height"
+                                  onChange={(e) => {
+                                    const newHeight = Math.max(10, Number(e.target.value));
+                                    handleTransomHeightChange(1, newHeight, true);
+                                  }}
+                                  InputProps={{
+                                    endAdornment: <Typography variant="caption">mm</Typography>,
+                                    sx: { width: '150px', m: 0.5 }
+                                  }}
+                                />
+                              </Box>
+                              <Box sx={{ mt: 3, width: '100%', textAlign: 'center' }}>
+                                <TextField
+                                  size="small"
+                                  type="number"
+                                  value={totalHeight}
+                                  label="Total Height"
+                                  variant="outlined"
+                                  disabled
+                                  InputProps={{
+                                    endAdornment: <Typography variant="caption">mm</Typography>,
+                                    sx: { width: '150px' }
+                                  }}
+                                />
+                              </Box>
+                            </Box>
+                          )}
+
+                          {/* Bottom-Transom Height */}
+                          {config && ['bottom-transom'].includes(config.frameLayout) && (
+                            <Box>
+                              <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', mb: 2 }}>
+                                <Box sx={{ display: 'flex', width: '150px' }}>
+                                  <Box sx={{ 
+                                    width: '50px', 
+                                    height: Math.max(40, (paneHeights[0] / totalHeight) * 180) + 'px',
+                                    bgcolor: '#e0e0e0',
+                                    display: 'flex',
+                                    justifyContent: 'center',
+                                    alignItems: 'center',
+                                    border: '1px solid #bbb',
+                                    borderRight: 'none',
+                                    borderRadius: '4px 0 0 0'
+                                  }}>
+                                    <Typography>L</Typography>
+                                  </Box>
+                                  <Box sx={{ 
+                                    width: '50px', 
+                                    height: Math.max(40, (paneHeights[0] / totalHeight) * 180) + 'px',
+                                    bgcolor: '#e0e0e0',
+                                    display: 'flex',
+                                    justifyContent: 'center',
+                                    alignItems: 'center',
+                                    border: '1px solid #bbb',
+                                    borderRight: 'none'
+                                  }}>
+                                    <Typography>M</Typography>
+                                  </Box>
+                                  <Box sx={{ 
+                                    width: '50px', 
+                                    height: Math.max(40, (paneHeights[0] / totalHeight) * 180) + 'px',
+                                    bgcolor: '#e0e0e0',
+                                    display: 'flex',
+                                    justifyContent: 'center',
+                                    alignItems: 'center',
+                                    border: '1px solid #bbb',
+                                    borderRadius: '0 4px 0 0'
+                                  }}>
+                                    <Typography>R</Typography>
+                                  </Box>
+                                </Box>
+                                <Box sx={{ 
+                                  width: '150px', 
+                                  height: Math.max(30, (paneHeights[3] / totalHeight) * 180) + 'px', 
+                                  bgcolor: '#e0e0e0',
+                                  display: 'flex',
+                                  justifyContent: 'center',
+                                  alignItems: 'center',
+                                  border: '1px solid #bbb',
+                                  borderTop: 'none',
+                                  borderRadius: '0 0 4px 4px'
+                                }}>
+                                  <Typography>Transom</Typography>
+                                </Box>
+                              </Box>
+                              <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1 }}>
+                                <TextField
+                                  size="small"
+                                  type="number"
+                                  value={paneHeights[0] || 0}
+                                  label="Main Height"
+                                  onChange={(e) => {
+                                    const newHeight = Math.max(10, Number(e.target.value));
+                                    handleTransomHeightChange(0, newHeight, false);
+                                  }}
+                                  InputProps={{
+                                    endAdornment: <Typography variant="caption">mm</Typography>,
+                                    sx: { width: '150px', m: 0.5 }
+                                  }}
+                                />
+                                <TextField
+                                  size="small"
+                                  type="number"
+                                  value={paneHeights[3] || 0}
+                                  label="Transom Height"
+                                  onChange={(e) => {
+                                    const newHeight = Math.max(10, Number(e.target.value));
+                                    handleTransomHeightChange(3, newHeight, false);
+                                  }}
+                                  InputProps={{
+                                    endAdornment: <Typography variant="caption">mm</Typography>,
+                                    sx: { width: '150px', m: 0.5 }
+                                  }}
+                                />
+                              </Box>
+                              <Box sx={{ mt: 3, width: '100%', textAlign: 'center' }}>
+                                <TextField
+                                  size="small"
+                                  type="number"
+                                  value={totalHeight}
+                                  label="Total Height"
+                                  variant="outlined"
+                                  disabled
+                                  InputProps={{
+                                    endAdornment: <Typography variant="caption">mm</Typography>,
+                                    sx: { width: '150px' }
+                                  }}
+                                />
+                              </Box>
+                            </Box>
+                          )}
+
+                          {/* For layouts that aren't explicitly handled */}
+                          {!['single', 'double-vertical', 'double-vertical-reversed', 't-layout', 'double-vertical-small-top', 'double-vertical-small-bottom', 'double-top', 'top-transom', 'bottom-transom'].includes(config.frameLayout) && (
+                            <Typography>Height controls for {config.frameLayout} layout will be implemented soon.</Typography>
+                          )}
+                        </Box>
+                      )}
+                    </Box>
+                  </Box>
+                </>
+              ) : (
+                <Box
+                  sx={{
+                    display: 'flex',
+                    justifyContent: 'center',
+                    alignItems: 'center',
+                    p: 3,
+                    bgcolor: '#f9f9f9',
+                    borderRadius: 1,
+                    minHeight: '300px',
+                  }}
+                >
+                  <Typography color="text.secondary">
+                    Click "VISUALIZE WINDOW" to see the preview
+                  </Typography>
+                </Box>
+              )}
+            </CardContent>
+          </Card>
+        </Grid>
+      </Grid>
+    </Box>
+  );
+}

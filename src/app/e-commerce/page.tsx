@@ -1,4 +1,4 @@
-import EcommerceLandingView from 'src/sections/_ecommerce/view/ecommerce-landing-view';
+import EcommerceLandingView from 'src/sections/ecommerce/view/ecommerce-landing-view';
 
 // ----------------------------------------------------------------------
 

@@ -4,7 +4,7 @@ import Container from '@mui/material/Container';
 import Grid from '@mui/material/Unstable_Grid2';
 import { SelectChangeEvent } from '@mui/material/Select';
 
-import { _reviews } from 'src/_mock';
+import { _reviews } from 'src/mock';
 import { useBoolean } from 'src/hooks/use-boolean';
 
 import ReviewNewForm from '../common/review-new-form';

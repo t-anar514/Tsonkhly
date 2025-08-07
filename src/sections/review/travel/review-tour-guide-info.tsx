@@ -7,7 +7,7 @@ import Avatar from '@mui/material/Avatar';
 import Typography from '@mui/material/Typography';
 import IconButton from '@mui/material/IconButton';
 
-import { _socials } from 'src/_mock';
+import { _socials } from 'src/mock';
 import Iconify from 'src/components/iconify';
 import { IAuthorProps } from 'src/types/author';
 import { fShortenNumber } from 'src/utils/format-number';

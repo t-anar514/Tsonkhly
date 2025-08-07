@@ -1,98 +1,122 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, ChangeEvent, useCallback } from 'react';
+import { useRouter } from 'next/navigation';
 import {
   Box,
   Card,
   Grid,
+  Step,
   Stack,
-  Slider,
   Button,
+  Stepper,
   Container,
-  TextField,
   Typography,
   FormControl,
   RadioGroup,
   Radio,
   FormControlLabel,
   InputAdornment,
-  MenuItem,
+  StepLabel,
+  StepContent,
+  Divider,
+  Paper,
 } from '@mui/material';
 
 import Iconify from 'src/components/iconify';
 import { useResponsive } from 'src/hooks/use-responsive';
 
 import {
+  WindowCustomization,
   WindowType,
   WindowShape,
   WindowStyle,
   WindowMaterial,
   GlassType,
-  WindowCustomization,
+  DeliveryOption,
+  VentDimensions,
+  WindowOpeningType,
 } from '../types/window-types';
+
+// Import step components
+import Step1 from './steps/Step1';
+import Step2 from './steps/Step2';
+import Step3 from './steps/Step3';
+// Step4 removed as per requirement
+import StepWrapper from './steps/StepWrapper';
+import { windowOptions } from './mockData';
+
+import { WindowVisualization } from './components/WindowVisualization';
+import { useCart, windowCustomizationToProduct } from 'src/contexts/cart-context';
+import { paths } from 'src/routes/paths';
 
 // ----------------------------------------------------------------------
 
-export default function WindowCustomizer() {
-  const mdUp = useResponsive('up', 'md');
+type WindowCustomizerProps = {
+  windowType?: string;
+};
 
-  const [windowCustomization, setWindowCustomization] = useState<WindowCustomization>({
-    type: WindowType.NEW_CONSTRUCTION,
-    shape: WindowShape.RECTANGULAR,
-    style: WindowStyle.CASEMENT,
-    material: WindowMaterial.VINYL,
-    dimensions: {
-      width: 360,
-      height: 480,
-      unit: 'inches',
-    },
-    glassType: GlassType.DOUBLE_PANE,
-    color: '#FFFFFF',
-    quantity: 1,
-    additionalFeatures: {
-      grids: false,
-      screens: true,
-      energyEfficient: true,
-      soundProofing: false,
-    },
-  });
+// Helper function to get initial window customization state
+const getInitialCustomization = (): WindowCustomization => ({
+  type: WindowType.REPLACEMENT,
+  shape: WindowShape.RECTANGULAR,
+  style: WindowStyle.CASEMENT,
+  material: WindowMaterial.VINYL,
+  openingType: WindowOpeningType.RIGHT_OPENING, // Default opening type
+  color: '#FFFFFF',
+  glassType: GlassType.DOUBLE_PANE,
+  dimensions: { width: 150, height: 150, unit: 'centimeters' },
+  quantity: 1,
+  ventDimensions: { width: 50, height: 80, unit: 'centimeters' },
+  deliveryOption: 'delivery',
+  installationService: false,
+  contactInfo: {
+    name: '',
+    phone: '',
+    address: '',
+  },
+  additionalFeatures: {
+    screens: false,
+    grids: false,
+    energyEfficient: false,
+    soundProofing: false,
+    topLight: false,
+    bottomLight: false,
+  },
+});
 
-  const [topShapeHeight, setTopShapeHeight] = useState<number>(200);
-  const [bottomShapeHeight, setBottomShapeHeight] = useState<number>(150);
+// Component definition
+export default function WindowCustomizer({
+  windowType: initialWindowType,
+}: WindowCustomizerProps = {}) {
+  const smUp = useResponsive('up', 'sm');
 
-  const handleTopShapeHeightChange = (
-    event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
-  ) => {
-    setTopShapeHeight(Number(event.target.value));
+  // State
+  const [activeStep, setActiveStep] = useState(0);
+  const [completed, setCompleted] = useState<{ [k: number]: boolean }>({});
+  const [windowCustomization, setWindowCustomization] = useState<WindowCustomization>(
+    getInitialCustomization()
+  );
+  const [windowType, setWindowType] = useState<string>(initialWindowType || '1tsonh');
+  const [currentColor, setCurrentColor] = useState<string>('#ffffff');
+  const [warningText, setWarningText] = useState<Array<{ title: string; description: string }>>([]);
+
+  // Stepper navigation handlers
+  const handleNext = () => {
+    setActiveStep((prevActiveStep) => prevActiveStep + 1);
   };
 
-  const handleBottomShapeHeightChange = (
-    event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
-  ) => {
-    setBottomShapeHeight(Number(event.target.value));
+  const handleBack = () => {
+    setActiveStep((prevActiveStep) => prevActiveStep - 1);
   };
 
-  const [windowCustomization1, setWindowCustomization1] = useState<WindowCustomization>({
-    type: WindowType.NEW_CONSTRUCTION,
-    shape: WindowShape.RECTANGULAR,
-    style: WindowStyle.CASEMENT,
-    material: WindowMaterial.VINYL,
-    dimensions: {
-      width: 360,
-      height: 480,
-      unit: 'inches',
-    },
-    glassType: GlassType.DOUBLE_PANE,
-    color: '#FFFFFF',
-    quantity: 1,
-    additionalFeatures: {
-      grids: false,
-      screens: true,
-      energyEfficient: true,
-      soundProofing: false,
-    },
-  });
+  const handleReset = () => {
+    setActiveStep(0);
+    setCompleted({});
+    setWindowCustomization(getInitialCustomization());
+  };
 
+  // Window customization handlers
   const handleChangeType = (event: React.ChangeEvent<HTMLInputElement>) => {
     setWindowCustomization({
       ...windowCustomization,
@@ -114,12 +138,15 @@ export default function WindowCustomizer() {
     });
   };
 
-  const handleChangeMaterial = (event: React.ChangeEvent<HTMLInputElement>) => {
-    setWindowCustomization({
-      ...windowCustomization,
-      material: event.target.value as WindowMaterial,
-    });
-  };
+  const handleChangeMaterial = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
+    const newMaterial = event.target.value as WindowMaterial;
+    setWindowCustomization((prev) => ({
+      ...prev,
+      material: newMaterial,
+    }));
+    // Reset warning text when material changes
+    setWarningText([]);
+  }, []);
 
   const handleChangeGlassType = (event: React.ChangeEvent<HTMLInputElement>) => {
     setWindowCustomization({
@@ -128,809 +155,530 @@ export default function WindowCustomizer() {
     });
   };
 
-  const handleChangeWidth = (
-    event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
-    isSecondWindow: boolean = false
-  ) => {
-    if (isSecondWindow) {
-      setWindowCustomization1({
-        ...windowCustomization1,
-        dimensions: {
-          ...windowCustomization1.dimensions,
-          width: Number(event.target.value),
-        },
-      });
-    } else {
-      setWindowCustomization({
-        ...windowCustomization,
-        dimensions: {
-          ...windowCustomization.dimensions,
-          width: Number(event.target.value),
-        },
-      });
-    }
-  };
+  const handleChangeWidth = (event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const value = Number(event.target.value);
+    if (isNaN(value)) return;
 
-  const handleChangeHeight = (
-    event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
-    isSecondWindow: boolean = false
-  ) => {
-    if (isSecondWindow) {
-      setWindowCustomization1({
-        ...windowCustomization1,
-        dimensions: {
-          ...windowCustomization1.dimensions,
-          height: Number(event.target.value),
-        },
-      });
-    } else {
-      setWindowCustomization({
-        ...windowCustomization,
-        dimensions: {
-          ...windowCustomization.dimensions,
-          height: Number(event.target.value),
-        },
-      });
-    }
-  };
-
-  const handleChangeColor = (event: React.ChangeEvent<HTMLInputElement>) => {
     setWindowCustomization({
       ...windowCustomization,
-      color: event.target.value,
+      dimensions: {
+        ...windowCustomization.dimensions,
+        width: value,
+      },
     });
   };
 
-  // Color options
-  const colorOptions = [
-    { value: '#FFFFFF', label: 'Цагаан', displayColor: '#FFFFFF' },
-    { value: '#000000', label: 'Хар', displayColor: '#000000' },
-    { value: '#D2B48C', label: 'Шаргал', displayColor: '#D2B48C' },
-  ];
+  const handleChangeHeight = (event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const value = Number(event.target.value);
+    if (isNaN(value)) return;
 
-  const handleChangeQuantity = (event: React.ChangeEvent<HTMLInputElement>) => {
     setWindowCustomization({
       ...windowCustomization,
-      quantity: Number(event.target.value),
+      dimensions: {
+        ...windowCustomization.dimensions,
+        height: value,
+      },
+    });
+  };
+
+  const handleChangeColor = (color: string) => {
+    setWindowCustomization({
+      ...windowCustomization,
+      color,
+    });
+  };
+
+  // Handle quantity change
+  const handleChangeQuantity = (
+    event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+  ) => {
+    const quantity = Number(event.target.value);
+    if (isNaN(quantity) || quantity < 1) return;
+
+    setWindowCustomization({
+      ...windowCustomization,
+      quantity,
     });
   };
 
   const handleChangeFeature = (
     feature: keyof NonNullable<WindowCustomization['additionalFeatures']>
   ) => {
-    setWindowCustomization({
-      ...windowCustomization,
-      additionalFeatures: {
-        ...windowCustomization.additionalFeatures,
-        [feature]: !windowCustomization.additionalFeatures?.[feature],
-      },
-    });
+    // For top and bottom light features, ensure they are mutually exclusive
+    if (feature === 'topLight' && windowCustomization.additionalFeatures?.bottomLight) {
+      setWindowCustomization({
+        ...windowCustomization,
+        additionalFeatures: {
+          ...windowCustomization.additionalFeatures,
+          topLight: true,
+          bottomLight: false,
+        },
+      });
+    } else if (feature === 'bottomLight' && windowCustomization.additionalFeatures?.topLight) {
+      setWindowCustomization({
+        ...windowCustomization,
+        additionalFeatures: {
+          ...windowCustomization.additionalFeatures,
+          topLight: false,
+          bottomLight: true,
+        },
+      });
+    } else {
+      setWindowCustomization({
+        ...windowCustomization,
+        additionalFeatures: {
+          ...windowCustomization.additionalFeatures,
+          [feature]: !windowCustomization.additionalFeatures?.[feature],
+        },
+      });
+    }
   };
 
-  // Calculate estimated price based on selections
-  const calculatePrice = () => {
-    let basePrice = 150;
+  const calculatePrice = (): number => {
+    // Base price depends on window type
+    let basePrice = 0;
+    switch (windowCustomization.type) {
+      case WindowType.NEW_CONSTRUCTION:
+        basePrice = 250;
+        break;
+      case WindowType.REPLACEMENT:
+        basePrice = 200;
+        break;
+      default:
+        basePrice = 200;
+    }
 
-    // Material factors
+    // Adjust based on material
+    let materialMultiplier = 1;
     switch (windowCustomization.material) {
-      case WindowMaterial.VINYL:
-        basePrice += 100;
-        break;
-      case WindowMaterial.WOOD:
-        basePrice += 250;
-        break;
       case WindowMaterial.ALUMINUM:
-        basePrice += 150;
+        materialMultiplier = 1.2;
         break;
       case WindowMaterial.FIBERGLASS:
-        basePrice += 300;
+        materialMultiplier = 1.5;
+        break;
+      case WindowMaterial.VINYL:
+        materialMultiplier = 1;
+        break;
+      case WindowMaterial.WOOD:
+        materialMultiplier = 1.8;
         break;
       default:
-        break;
+        materialMultiplier = 1;
     }
 
-    // Glass type factors
+    // Adjust based on glass type
+    let glassMultiplier = 1;
     switch (windowCustomization.glassType) {
       case GlassType.SINGLE_PANE:
-        basePrice += 50;
+        glassMultiplier = 0.8;
         break;
       case GlassType.DOUBLE_PANE:
-        basePrice += 150;
+        glassMultiplier = 1;
         break;
       case GlassType.TRIPLE_PANE:
-        basePrice += 250;
+        glassMultiplier = 1.3;
         break;
       case GlassType.LOW_E:
-        basePrice += 200;
-        break;
-      case GlassType.TEMPERED:
-        basePrice += 180;
-        break;
-      case GlassType.FROSTED:
-        basePrice += 170;
+        glassMultiplier = 1.2;
         break;
       default:
-        break;
+        glassMultiplier = 1;
     }
 
-    // Size factor (per square foot)
-    const sqFt =
-      (windowCustomization.dimensions.width * windowCustomization.dimensions.height) / 144;
-    basePrice += sqFt * 15;
+    // Size adjustment
+    const area =
+      (windowCustomization.dimensions.width * windowCustomization.dimensions.height) / 10000; // Convert to square meters
 
-    // Additional features
-    if (windowCustomization.additionalFeatures?.grids) basePrice += 50;
-    if (windowCustomization.additionalFeatures?.screens) basePrice += 30;
-    if (windowCustomization.additionalFeatures?.energyEfficient) basePrice += 100;
-    if (windowCustomization.additionalFeatures?.soundProofing) basePrice += 120;
+    let price = basePrice * materialMultiplier * glassMultiplier * area;
 
-    return basePrice * windowCustomization.quantity;
+    // Add for additional features
+    if (windowCustomization.additionalFeatures?.grids) price += 50;
+    if (windowCustomization.additionalFeatures?.screens) price += 30;
+    if (windowCustomization.additionalFeatures?.energyEfficient) price += 80;
+    if (windowCustomization.additionalFeatures?.soundProofing) price += 100;
+
+    // Installation service
+    if (windowCustomization.installationService) price += 150;
+
+    // Multiply by quantity
+    price *= windowCustomization.quantity || 1;
+
+    return price;
   };
 
   const estimatedPrice = calculatePrice();
 
+  // Define steps for the wizard - Step 4 removed as per requirement
+  const steps = [
+    {
+      label: 'STEP 1: Цонхны хийц',
+      description: 'Window Style & Specs - Рамны материал, өнгө, хэмжээ, шилийн төрөл сонголт',
+    },
+    {
+      label: 'STEP 2: Үндсэн хуваалт',
+      description:
+        'Main Partition Selection - Нэг, хоёр, эсвэл гурван хэсэгтэй цонхны төрөл сонголт',
+    },
+    {
+      label: 'STEP 3: Баталгаажуулах',
+      description: 'Confirm Configuration - Салхивчны хэмжээ, эцсийн загвар харуулах',
+    },
+  ];
+
+  // Window type change handler
+  const handleWindowTypeChange = (windowType: string) => {
+    setWindowType(windowType);
+  };
+
+  // Window opening type change handler
+  const handleChangeOpeningType = (openingType: WindowOpeningType) => {
+    setWindowCustomization({
+      ...windowCustomization,
+      openingType,
+    });
+  };
+
+  // Top/Bottom light options handler
+  const handleChangeLightOption = (
+    option: 'none' | 'top' | 'topDivided' | 'bottom' | 'bottomDivided'
+  ) => {
+    setWindowCustomization({
+      ...windowCustomization,
+      additionalFeatures: {
+        ...windowCustomization.additionalFeatures,
+        // Set the main boolean flags for top/bottom light
+        topLight: option === 'top' || option === 'topDivided',
+        bottomLight: option === 'bottom' || option === 'bottomDivided',
+        // Track whether it's divided or regular
+        skylightType:
+          option === 'topDivided' ? 'divided' : option === 'top' ? 'regular' : undefined,
+        underlightType:
+          option === 'bottomDivided' ? 'divided' : option === 'bottom' ? 'regular' : undefined,
+      },
+    });
+  };
+
+  // Skylight dimension change handlers
+  const handleSkylightHeightChange = (
+    event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+  ) => {
+    const value = Number(event.target.value);
+    if (isNaN(value) || value <= 0) return;
+
+    const totalHeight = windowCustomization.dimensions.height;
+    const newTopSectionHeight = value;
+
+    // Ensure the main window section has a minimum height
+    const minMainSectionHeight = 50; // Minimum height for main window section
+    if (totalHeight - newTopSectionHeight < minMainSectionHeight) return;
+
+    setWindowCustomization({
+      ...windowCustomization,
+      topSection: {
+        height: newTopSectionHeight,
+        unit: windowCustomization.dimensions.unit,
+      },
+    });
+  };
+
+  // Vent dimension change handlers
+  const handleVentWidthChange = (
+    event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+  ) => {
+    const ventWidth = Number(event.target.value);
+    if (isNaN(ventWidth)) return;
+
+    setWindowCustomization({
+      ...windowCustomization,
+      ventDimensions: {
+        ...(windowCustomization.ventDimensions as VentDimensions),
+        width: ventWidth,
+        unit: 'centimeters',
+      } as VentDimensions,
+    });
+  };
+
+  const handleVentHeightChange = (
+    event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+  ) => {
+    const ventHeight = Number(event.target.value);
+    if (isNaN(ventHeight)) return;
+
+    setWindowCustomization({
+      ...windowCustomization,
+      ventDimensions: {
+        ...(windowCustomization.ventDimensions as VentDimensions),
+        height: ventHeight,
+        unit: 'centimeters',
+      } as VentDimensions,
+    });
+  };
+
+  // Contact info handlers
+  const handleContactInfoChange = (
+    field: keyof WindowCustomization['contactInfo'],
+    value: string
+  ) => {
+    setWindowCustomization({
+      ...windowCustomization,
+      contactInfo: {
+        name: field === 'name' ? value : windowCustomization.contactInfo?.name || '',
+        phone: field === 'phone' ? value : windowCustomization.contactInfo?.phone || '',
+        address: field === 'address' ? value : windowCustomization.contactInfo?.address || '',
+      },
+    });
+  };
+
+  // Cart and order handlers
+  const { addToCart } = useCart();
+  const router = useRouter();
+
+  const handleAddToCart = () => {
+    const calculatedPrice = calculatePrice();
+    // Convert window customization to cart product item
+    const cartItem = windowCustomizationToProduct(windowCustomization, windowType, calculatedPrice);
+    // Add to cart
+    addToCart(cartItem);
+    // Navigate to the cart page
+    router.push(paths.eCommerce.cart);
+  };
+
+  const handleAddAnotherWindow = () => {
+    // Logic to save current window and start a new one
+    console.log('Adding another window');
+    // Reset the wizard
+    setActiveStep(0);
+  };
+
+  // Step 4 specific handlers
+  const handleChangeDeliveryOption = (option: DeliveryOption) => {
+    setWindowCustomization({
+      ...windowCustomization,
+      deliveryOption: option,
+    });
+  };
+
+  const handleChangeInstallationService = (event: React.ChangeEvent<HTMLInputElement>) => {
+    setWindowCustomization({
+      ...windowCustomization,
+      installationService: event.target.checked,
+    });
+  };
+
+  const handleSubmitOrder = () => {
+    console.log('Order submitted', windowCustomization);
+    // Logic for order submission
+  };
+
+  // Render the current step content using separate components
+  const renderStepContent = (step: number) => {
+    switch (step) {
+      case 0:
+        return (
+          <StepWrapper stepNumber={0} warningText={warningText}>
+            <Step1
+              windowCustomization={windowCustomization}
+              onChangeMaterial={handleChangeMaterial}
+              onChangeColor={handleChangeColor}
+              onChangeWidth={handleChangeWidth}
+              onChangeHeight={handleChangeHeight}
+              onChangeGlassType={handleChangeGlassType}
+              onChangeType={handleChangeType}
+              setWarningText={setWarningText}
+            />
+          </StepWrapper>
+        );
+      case 1:
+        return (
+          <StepWrapper stepNumber={1}>
+            <Step2
+              windowCustomization={windowCustomization}
+              windowType={windowType}
+              onChangeWindowType={handleWindowTypeChange}
+              onChangeOpeningType={handleChangeOpeningType}
+              onChangeLightOption={handleChangeLightOption}
+            />
+          </StepWrapper>
+        );
+      case 2:
+        return (
+          <StepWrapper stepNumber={2}>
+            <Step3
+              windowCustomization={windowCustomization}
+              windowType={windowType}
+              onAddAnotherWindow={handleAddAnotherWindow}
+              onAddToCart={handleAddToCart}
+              onChangeVentHeight={handleVentHeightChange}
+              onChangeVentWidth={handleVentWidthChange}
+              onChangeSkylightHeight={handleSkylightHeightChange}
+              onSubmitOrder={handleSubmitOrder}
+            />
+          </StepWrapper>
+        );
+      default:
+        return null;
+    }
+  };
+
+  // Determine if the current step is completed
+  const isStepComplete = (step: number) => completed[step];
+
+  // Calculate the total price
+  const totalPrice = calculatePrice();
+
   return (
-    <Container maxWidth="lg" sx={{ my: 8 }}>
-      <Typography variant="h3" sx={{ mb: 5 }}>
-        Цонхны Загварчлагч
-      </Typography>
-
-      <Grid container spacing={4}>
-        <Grid item xs={12} md={7}>
-          <Card sx={{ p: 3 }}>
-            <Box sx={{ mb: 3 }}>
-              <Typography variant="subtitle1" gutterBottom>
-                Цонхны Төрөл
+    <Container sx={{ my: 5 }}>
+      <Grid container spacing={3}>
+        <Grid item xs={12} md={4}>
+          {/* Window Visualization */}
+          <Card sx={{ p: 3, mb: 3, position: 'sticky', top: '70px' }}>
+            <WindowVisualization
+              windowCustomization={windowCustomization}
+              windowType={windowType}
+            />
+            <Typography variant="h6" sx={{ mt: 2, mb: 1 }}>
+              Таны сонголтууд:
+            </Typography>
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
+              {/* Step 1 selections */}
+              <Typography variant="body2">
+                <strong>Материал:</strong>{' '}
+                {
+                  {
+                    [WindowMaterial.VINYL]: 'Хуванцар',
+                    [WindowMaterial.WOOD]: 'Мод',
+                    [WindowMaterial.ALUMINUM]: 'Хөнгөн цагаан',
+                    [WindowMaterial.FIBERGLASS]: 'Шилэн мяндас',
+                  }[windowCustomization.material]
+                }
               </Typography>
-              <FormControl>
-                <RadioGroup row value={windowCustomization.type} onChange={handleChangeType}>
-                  <FormControlLabel
-                    value={WindowType.NEW_CONSTRUCTION}
-                    control={<Radio />}
-                    label="Шинэ Барилгын Цонх"
-                  />
-                  <FormControlLabel
-                    value={WindowType.REPLACEMENT}
-                    control={<Radio />}
-                    label="Сольж Суулгах Цонх"
-                  />
-                </RadioGroup>
-              </FormControl>
-            </Box>
-            <Box
-              sx={{
-                mb: 5,
-                height: 320,
-                bgcolor: 'grey.200',
-                borderRadius: 1,
-                position: 'relative',
-              }}
-            >
-              {/* Preview area with two windows directly next to each other */}
-              <Box
-                sx={{
-                  position: 'relative',
-                  height: '100%',
-                  width: '100%',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                }}
-              >
-                {/* Combined structure with top shape */}
+              <Typography variant="body2">
+                <strong>Өнгө:</strong>{' '}
                 <Box
+                  component="span"
                   sx={{
-                    position: 'relative',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    alignItems: 'center',
+                    display: 'inline-block',
+                    width: '14px',
+                    height: '14px',
+                    backgroundColor: windowCustomization.color,
+                    border: '1px solid #ccc',
+                    verticalAlign: 'middle',
+                    mr: 0.5,
                   }}
-                >
-                  {/* Top shape */}
-                  <Box sx={{ position: 'relative' }}>
-                    <Box
-                      sx={{
-                        width: `${
-                          (windowCustomization.dimensions.width +
-                            windowCustomization1.dimensions.width) /
-                          3
-                        }px`,
-                        height: `${topShapeHeight / 3}px`,
-                        bgcolor: 'grey.400',
-                        border: '15px solid',
-                        borderColor: 'grey.500',
-                        borderRadius: '4px 4px 0 0',
-                        mb: 0.5,
-                      }}
-                    />
-                    <Typography
-                      variant="caption"
-                      sx={{
-                        position: 'absolute',
-                        top: '50%',
-                        left: '50%',
-                        transform: 'translate(-50%, -50%)',
-                        fontSize: '0.6rem',
-                      }}
-                    >
-                      {topShapeHeight} cm
-                    </Typography>
-                  </Box>
+                ></Box>
+                {windowCustomization.color}
+              </Typography>
+              <Typography variant="body2">
+                <strong>Шил:</strong>{' '}
+                {
+                  {
+                    [GlassType.SINGLE_PANE]: 'Нэг давхар',
+                    [GlassType.DOUBLE_PANE]: 'Хоёр давхар',
+                    [GlassType.TRIPLE_PANE]: 'Гурван давхар',
+                    [GlassType.LOW_E]: 'Нам E',
+                    [GlassType.TEMPERED]: 'Бэхжүүлсэн',
+                    [GlassType.FROSTED]: 'Хүрэн өнгөтэй',
+                  }[windowCustomization.glassType]
+                }
+              </Typography>
 
-                  {/* Combined windows */}
-                  <Box sx={{ display: 'flex', flexDirection: 'row' }}>
-                    {/* First window */}
-                    <Box sx={{ position: 'relative' }}>
-                      <Box
-                        sx={{
-                          width: `${windowCustomization.dimensions.width / 3}px`,
-                          height: `${windowCustomization.dimensions.height / 3}px`,
-                          bgcolor: windowCustomization.color,
-                          border: '15px solid',
-                          borderColor: 'grey.400',
-                          borderRight: 0, // Remove right border to connect with second window
-                          borderRadius:
-                            windowCustomization.shape === WindowShape.RECTANGULAR
-                              ? '4px 0 0 4px' // Round only left corners
-                              : windowCustomization.shape === WindowShape.ARCHED
-                              ? '20px 0 0 4px' // Arch on left side only
-                              : windowCustomization.shape === WindowShape.CIRCULAR
-                              ? '50% 0 0 50%' // Half circle on left side
-                              : '4px 0 0 4px',
-                        }}
-                      />
-                      <Box
-                        sx={{
-                          position: 'absolute',
-                          top: 0,
-                          left: 0,
-                          width: '100%',
-                          height: '100%',
-                          display: 'flex',
-                          flexDirection: 'column',
-                          justifyContent: 'center',
-                          alignItems: 'center',
-                        }}
-                      >
-                        <Typography
-                          variant="caption"
-                          sx={{
-                            fontSize: '0.6rem',
-                            color: 'common.white',
-                            textShadow: '0px 0px 3px rgba(0,0,0,1)',
-                            fontWeight: 'bold',
-                            mb: 0.5,
-                          }}
-                        >
-                          {windowCustomization.dimensions.width} cm
-                        </Typography>
-                        <Typography
-                          variant="caption"
-                          sx={{
-                            fontSize: '0.6rem',
-                            color: 'common.white',
-                            textShadow: '0px 0px 3px rgba(0,0,0,1)',
-                            fontWeight: 'bold',
-                          }}
-                        >
-                          {windowCustomization.dimensions.height} cm
-                        </Typography>
+              {/* Step 2 selections */}
+              <Typography variant="body2">
+                <strong>Цонхны төрөл:</strong>{' '}
+                {
+                  {
+                    '1tsonh': 'Нэг хэсэгтэй',
+                    '2tsonh': 'Хоёр хэсэгтэй',
+                    '3tsonh': 'Гурван хэсэгтэй',
+                  }[windowType]
+                }
+              </Typography>
+              {windowCustomization.openingType && (
+                <Typography variant="body2">
+                  <strong>Нээлтийн төрөл:</strong>{' '}
+                  {
+                    {
+                      [WindowOpeningType.FIXED]: 'Суурин',
+                      [WindowOpeningType.RIGHT_OPENING]: 'Баруун талд нээгддэг',
+                      [WindowOpeningType.LEFT_OPENING]: 'Зүүн талд нээгддэг',
+                      [WindowOpeningType.BOTH_OPENING]: 'Хоёр талд нээгддэг',
+                      [WindowOpeningType.TILT_TURN_LEFT]: 'Зүүн хэлбэлзэх эргэлт',
+                      [WindowOpeningType.TILT_TURN_BOTH]: 'Хоёр талын хэлбэлзэх эргэлт',
+                    }[windowCustomization.openingType]
+                  }
+                </Typography>
+              )}
 
-                        {/* Window Handle Image */}
-                        <Box
-                          component="img"
-                          src="/assets/images/windowHandles.png"
-                          alt="Window Handle"
-                          sx={{
-                            position: 'absolute',
-                            top: '60%',
-                            right: '30%',
-                            transform: 'translate(-50%, -50%)',
-                            maxWidth: '60%',
-                            maxHeight: '60%',
-                            objectFit: 'contain',
-                            zIndex: 2,
-                          }}
-                        />
-                      </Box>
-                    </Box>
-
-                    {/* Second window */}
-                    <Box sx={{ position: 'relative' }}>
-                      <Box
-                        sx={{
-                          width: `${windowCustomization1.dimensions.width / 3}px`,
-                          height: `${windowCustomization.dimensions.height / 3}px`,
-                          bgcolor: windowCustomization.color,
-                          border: '15px solid',
-                          borderColor: 'black',
-                          // borderLeft: 0, // Remove left border to connect with first window
-                          // borderRight: 0,
-                          // borderTop: 0,
-                          // borderBottom: 0,
-                          borderRadius:
-                            windowCustomization.shape === WindowShape.RECTANGULAR
-                              ? '0 4px 4px 0' // Round only right corners
-                              : windowCustomization.shape === WindowShape.ARCHED
-                              ? '0 20px 4px 0' // Arch on right side only
-                              : windowCustomization.shape === WindowShape.CIRCULAR
-                              ? '0 50% 50% 0' // Half circle on right side
-                              : '0 4px 4px 0',
-                        }}
-                      />
-                      <Box
-                        sx={{
-                          position: 'absolute',
-                          top: 0,
-                          left: 0,
-                          width: '100%',
-                          height: '100%',
-                          display: 'flex',
-                          flexDirection: 'column',
-                          justifyContent: 'center',
-                          alignItems: 'center',
-                        }}
-                      >
-                        <Typography
-                          variant="caption"
-                          sx={{
-                            fontSize: '0.6rem',
-                            color: 'common.white',
-                            textShadow: '0px 0px 3px rgba(0,0,0,1)',
-                            fontWeight: 'bold',
-                            mb: 0.5,
-                          }}
-                        >
-                          {windowCustomization1.dimensions.width} cm
-                        </Typography>
-                        <Typography
-                          variant="caption"
-                          sx={{
-                            fontSize: '0.6rem',
-                            color: 'common.white',
-                            textShadow: '0px 0px 3px rgba(0,0,0,1)',
-                            fontWeight: 'bold',
-                          }}
-                        >
-                          {windowCustomization1.dimensions.height} cm
-                        </Typography>
-                      </Box>
-                    </Box>
-                  </Box>
-
-                  {/* Bottom shape */}
-                  <Box sx={{ position: 'relative', mt: 0.5 }}>
-                    <Box
-                      sx={{
-                        width: `${
-                          (windowCustomization.dimensions.width +
-                            windowCustomization1.dimensions.width) /
-                          3
-                        }px`,
-                        height: `${bottomShapeHeight / 3}px`,
-                        bgcolor: 'grey.400',
-                        border: '15px solid',
-                        borderColor: 'grey.600',
-                        borderRadius: '0 0 4px 4px',
-                      }}
-                    />
-                    <Typography
-                      variant="caption"
-                      sx={{
-                        position: 'absolute',
-                        top: '50%',
-                        left: '50%',
-                        transform: 'translate(-50%, -50%)',
-                        fontSize: '0.6rem',
-                      }}
-                    >
-                      {bottomShapeHeight} cm
-                    </Typography>
-                  </Box>
-                </Box>
-
-                {/* Combined dimensions labels */}
-                {/* <Stack spacing={0.5} sx={{ position: 'absolute', bottom: 10, textAlign: 'center' }}>
-                  <Typography variant="caption">
-                    Нийт өргөн:{' '}
-                    {windowCustomization.dimensions.width + windowCustomization1.dimensions.width}{' '}
-                    cm
-                  </Typography>
-                  <Typography variant="caption">
-                    Өндөр:{' '}
-                    {Math.max(
-                      windowCustomization.dimensions.height,
-                      windowCustomization1.dimensions.height
-                    )}{' '}
-                    cm
-                  </Typography>
-                </Stack> */}
-              </Box>
+              {/* Step 3 selections */}
+              <Typography variant="body2">
+                <strong>Хэмжээ:</strong> {windowCustomization.dimensions.width} ×{' '}
+                {windowCustomization.dimensions.height} {windowCustomization.dimensions.unit}
+                ``{' '}
+              </Typography>
+              <Typography variant="body2">
+                <strong>Тоо ширхэг:</strong> {windowCustomization.quantity}
+              </Typography>
             </Box>
-
-            <Typography variant="subtitle1" sx={{ mb: 2 }}>
-              Цонхны Хэмжээ
-            </Typography>
-
-            <Typography variant="subtitle1" sx={{ mt: 3, mb: 2 }}>
-              1-р Цонхны Хэмжээс
-            </Typography>
-            <Grid container spacing={0}>
-              <Grid item xs={6}>
-                <TextField
-                  fullWidth
-                  label="Өргөн"
-                  type="number"
-                  value={windowCustomization.dimensions.width}
-                  onChange={(e) => handleChangeWidth(e, false)}
-                  InputProps={{
-                    endAdornment: <InputAdornment position="end">cm</InputAdornment>,
-                  }}
-                />
-              </Grid>
-              <Grid item xs={6}>
-                <TextField
-                  fullWidth
-                  label="Өндөр"
-                  type="number"
-                  value={windowCustomization.dimensions.height}
-                  onChange={(e) => handleChangeHeight(e, false)}
-                  InputProps={{
-                    endAdornment: <InputAdornment position="end">cm</InputAdornment>,
-                  }}
-                />
-              </Grid>
-            </Grid>
-
-            <Typography variant="subtitle1" sx={{ mt: 3, mb: 2 }}>
-              2-р Цонхны Хэмжээс
-            </Typography>
-            <Grid container spacing={0}>
-              <Grid item xs={6}>
-                <TextField
-                  fullWidth
-                  label="Өргөн"
-                  type="number"
-                  value={windowCustomization1.dimensions.width}
-                  onChange={(e) => handleChangeWidth(e, true)}
-                  InputProps={{
-                    endAdornment: <InputAdornment position="end">cm</InputAdornment>,
-                  }}
-                />
-              </Grid>
-              <Grid item xs={6}>
-                <TextField
-                  fullWidth
-                  label="Өндөр"
-                  type="number"
-                  value={windowCustomization1.dimensions.height}
-                  onChange={(e) => handleChangeHeight(e, true)}
-                  InputProps={{
-                    endAdornment: <InputAdornment position="end">cm</InputAdornment>,
-                  }}
-                />
-              </Grid>
-            </Grid>
-
-            <Typography variant="subtitle1" sx={{ mt: 3, mb: 2 }}>
-              Дээд Хэсгийн Хэмжээс
-            </Typography>
-            <Grid container spacing={0}>
-              <Grid item xs={12}>
-                <TextField
-                  fullWidth
-                  label="Өндөр"
-                  type="number"
-                  value={topShapeHeight}
-                  onChange={handleTopShapeHeightChange}
-                  InputProps={{
-                    endAdornment: <InputAdornment position="end">cm</InputAdornment>,
-                  }}
-                />
-              </Grid>
-            </Grid>
-
-            <Typography variant="subtitle1" sx={{ mt: 3, mb: 2 }}>
-              Доод Хэсгийн Хэмжээс
-            </Typography>
-            <Grid container spacing={0}>
-              <Grid item xs={12}>
-                <TextField
-                  fullWidth
-                  label="Өндөр"
-                  type="number"
-                  value={bottomShapeHeight}
-                  onChange={handleBottomShapeHeightChange}
-                  InputProps={{
-                    endAdornment: <InputAdornment position="end">cm</InputAdornment>,
-                  }}
-                />
-              </Grid>
-            </Grid>
           </Card>
         </Grid>
 
-        <Grid item xs={12} md={5}>
+        <Grid item xs={12} md={8}>
           <Card sx={{ p: 3 }}>
-            <Typography variant="h5" sx={{ mb: 3 }}>
-              Цонхны Сонголтууд
-            </Typography>
+            {/* Steps */}
+            <Stepper activeStep={activeStep} orientation="horizontal" sx={{ mb: 4 }}>
+              {steps.map((step, index) => (
+                <Step key={step.label} completed={isStepComplete(index)}>
+                  <StepLabel>
+                    <Typography variant="subtitle1">{step.label}</Typography>
+                    <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+                      {step.description}
+                    </Typography>
+                  </StepLabel>
+                </Step>
+              ))}
+            </Stepper>
 
-            <Stack spacing={3}>
-              <div>
-                <Typography variant="subtitle1" gutterBottom>
-                  Цонхны Хэлбэр
-                </Typography>
-                <FormControl>
-                  <RadioGroup row value={windowCustomization.shape} onChange={handleChangeShape}>
-                    {Object.values(WindowShape).map((shape) => (
-                      <FormControlLabel
-                        key={shape}
-                        value={shape}
-                        control={<Radio />}
-                        label={
-                          shape === WindowShape.RECTANGULAR
-                            ? 'Тэгш өнцөгт'
-                            : shape === WindowShape.ARCHED
-                            ? 'Нуман'
-                            : shape === WindowShape.CIRCULAR
-                            ? 'Дугуй'
-                            : shape === WindowShape.CUSTOM
-                            ? 'Захиалгат'
-                            : ''
-                        }
-                      />
-                    ))}
-                  </RadioGroup>
-                </FormControl>
-              </div>
+            {/* Current step content */}
+            <Box sx={{ mt: 2, mb: 2 }}>
+              {renderStepContent(activeStep)}
 
-              <div>
-                <Typography variant="subtitle1" gutterBottom>
-                  Цонхны Загвар
-                </Typography>
-                <TextField
-                  select
-                  fullWidth
-                  value={windowCustomization.style}
-                  onChange={(e) =>
-                    setWindowCustomization({
-                      ...windowCustomization,
-                      style: e.target.value as WindowStyle,
-                    })
-                  }
+              <Box sx={{ mt: 3, display: 'flex', gap: 1 }}>
+                <Button
+                  disabled={activeStep === 0}
+                  onClick={handleBack}
+                  startIcon={<Iconify icon="eva:arrow-ios-back-fill" />}
                 >
-                  {Object.values(WindowStyle).map((style) => (
-                    <MenuItem key={style} value={style}>
-                      {style === WindowStyle.CASEMENT
-                        ? 'Эргэдэг Цонх'
-                        : style === WindowStyle.DOUBLE_HUNG
-                        ? 'Хос Дүүжин Цонх'
-                        : style === WindowStyle.SLIDING
-                        ? 'Гүйдэг Цонх'
-                        : style === WindowStyle.FIXED
-                        ? 'Тогтмол Цонх'
-                        : style === WindowStyle.BAY
-                        ? 'Булан Цонх'
-                        : style === WindowStyle.BOW
-                        ? 'Нумын Цонх'
-                        : style === WindowStyle.AWNING
-                        ? 'Саравч Цонх'
-                        : ''}
-                    </MenuItem>
-                  ))}
-                </TextField>
-              </div>
+                  Буцах
+                </Button>
 
-              <div>
-                <Typography variant="subtitle1" gutterBottom>
-                  Материал
-                </Typography>
-                <TextField
-                  select
-                  fullWidth
-                  value={windowCustomization.material}
-                  onChange={(e) =>
-                    setWindowCustomization({
-                      ...windowCustomization,
-                      material: e.target.value as WindowMaterial,
-                    })
-                  }
-                >
-                  {Object.values(WindowMaterial).map((material) => (
-                    <MenuItem key={material} value={material}>
-                      {material === WindowMaterial.VINYL
-                        ? 'Хуванцар (Винил)'
-                        : material === WindowMaterial.WOOD
-                        ? 'Мод'
-                        : material === WindowMaterial.ALUMINUM
-                        ? 'Хөнгөн цагаан'
-                        : material === WindowMaterial.FIBERGLASS
-                        ? 'Шилон мөр'
-                        : ''}
-                    </MenuItem>
-                  ))}
-                </TextField>
-              </div>
+                <Box sx={{ flexGrow: 1 }} />
 
-              <div>
-                <Typography variant="subtitle1" gutterBottom>
-                  Шилний Төрөл
-                </Typography>
-                <TextField
-                  select
-                  fullWidth
-                  value={windowCustomization.glassType}
-                  onChange={(e) =>
-                    setWindowCustomization({
-                      ...windowCustomization,
-                      glassType: e.target.value as GlassType,
-                    })
-                  }
-                >
-                  {Object.values(GlassType).map((glass) => (
-                    <MenuItem key={glass} value={glass}>
-                      {glass === GlassType.SINGLE_PANE
-                        ? 'Нэг Давхарга Шил'
-                        : glass === GlassType.DOUBLE_PANE
-                        ? 'Хос Давхарга Шил'
-                        : glass === GlassType.TRIPLE_PANE
-                        ? 'Гурван Давхарга Шил'
-                        : glass === GlassType.LOW_E
-                        ? 'Бага Цацаргалт Шил'
-                        : glass === GlassType.TEMPERED
-                        ? 'Хатуу Шил'
-                        : glass === GlassType.FROSTED
-                        ? 'Цантсан Шил'
-                        : ''}
-                    </MenuItem>
-                  ))}
-                </TextField>
-              </div>
-
-              <div>
-                <Typography variant="subtitle1" gutterBottom>
-                  Өнгө
-                </Typography>
-                <FormControl>
-                  <RadioGroup row value={windowCustomization.color} onChange={handleChangeColor}>
-                    {colorOptions.map((color) => (
-                      <FormControlLabel
-                        key={color.value}
-                        value={color.value}
-                        control={<Radio />}
-                        label={
-                          <Stack direction="row" spacing={1} alignItems="center">
-                            <Box
-                              sx={{
-                                width: 20,
-                                height: 20,
-                                bgcolor: color.displayColor,
-                                borderRadius: '50%',
-                                border: '1px solid',
-                                borderColor: 'divider',
-                              }}
-                            />
-                            <Typography variant="body2">{color.label}</Typography>
-                          </Stack>
-                        }
-                      />
-                    ))}
-                  </RadioGroup>
-                </FormControl>
-              </div>
-
-              <div>
-                <Typography variant="subtitle1" gutterBottom>
-                  Тоо Хэмжээ
-                </Typography>
-                <TextField
-                  fullWidth
-                  type="number"
-                  InputProps={{ inputProps: { min: 1 } }}
-                  value={windowCustomization.quantity}
-                  onChange={handleChangeQuantity}
-                />
-              </div>
-
-              <div>
-                <Typography variant="subtitle1" gutterBottom>
-                  Нэмэлт Үйлчилгээнүүд
-                </Typography>
-                <Grid container spacing={2}>
-                  <Grid item xs={6}>
-                    <FormControlLabel
-                      control={
-                        <Radio
-                          checked={!!windowCustomization.additionalFeatures?.grids}
-                          onChange={() => handleChangeFeature('grids')}
-                        />
-                      }
-                      label="Торлол"
-                    />
-                  </Grid>
-                  <Grid item xs={6}>
-                    <FormControlLabel
-                      control={
-                        <Radio
-                          checked={!!windowCustomization.additionalFeatures?.screens}
-                          onChange={() => handleChangeFeature('screens')}
-                        />
-                      }
-                      label="Тор"
-                    />
-                  </Grid>
-                  <Grid item xs={6}>
-                    <FormControlLabel
-                      control={
-                        <Radio
-                          checked={!!windowCustomization.additionalFeatures?.energyEfficient}
-                          onChange={() => handleChangeFeature('energyEfficient')}
-                        />
-                      }
-                      label="Эрчим Хүч Хэмнэлттэй"
-                    />
-                  </Grid>
-                  <Grid item xs={6}>
-                    <FormControlLabel
-                      control={
-                        <Radio
-                          checked={!!windowCustomization.additionalFeatures?.soundProofing}
-                          onChange={() => handleChangeFeature('soundProofing')}
-                        />
-                      }
-                      label="Дуу Тусгаарлагч"
-                    />
-                  </Grid>
-                </Grid>
-              </div>
-
-              <Stack spacing={2}>
-                <Typography variant="h5">Ойролцоо Үнэ: ${estimatedPrice.toFixed(2)}</Typography>
-
-                <Stack direction="row" spacing={2}>
+                {activeStep < steps.length - 1 && (
                   <Button
-                    fullWidth
-                    size="large"
                     variant="contained"
-                    startIcon={<Iconify icon="carbon:shopping-cart-plus" />}
-                    onClick={() => {
-                      // Here you would add the window to the cart using your cart context or API call
-                      // For example:
-                      // addToCart({
-                      //   ...windowCustomization,
-                      //   price: calculatePrice(),
-                      //   id: generateId(),
-                      //   name: `${windowCustomization.material} ${windowCustomization.style} Window`
-                      // });
-                      alert('Цонх амжилттай сагсанд нэмэгдлээ!'); // Window successfully added to cart!
-                    }}
+                    onClick={handleNext}
+                    endIcon={<Iconify icon="eva:arrow-ios-forward-fill" />}
                   >
-                    Сагсанд Нэмэх
+                    Дараах
                   </Button>
+                )}
+              </Box>
+            </Box>
 
-                  <Button
-                    fullWidth
-                    size="large"
-                    variant="contained"
-                    color="primary"
-                    onClick={() => {
-                      // Here you would add the window to cart and redirect to checkout
-                      // For example:
-                      // addToCart({
-                      //   ...windowCustomization,
-                      //   price: calculatePrice(),
-                      //   id: generateId(),
-                      // });
-                      // router.push(paths.eCommerce.checkout);
-                      alert('Цонх сагсанд нэмэгдэж төлбөр хийх хуудас руу шилжиж байна...'); // Window added to cart and redirecting to payment page...
-                    }}
-                  >
-                    Одоо Авах
-                  </Button>
-                </Stack>
-              </Stack>
-            </Stack>
+            {activeStep === steps.length && (
+              <Box sx={{ p: 3 }}>
+                <Typography paragraph>Захиалга амжилттай илгээгдлээ!</Typography>
+
+                <Button
+                  color="inherit"
+                  onClick={handleReset}
+                  startIcon={<Iconify icon="eva:arrow-ios-back-fill" />}
+                >
+                  Дахин эхлүүлэх
+                </Button>
+              </Box>
+            )}
           </Card>
         </Grid>
       </Grid>

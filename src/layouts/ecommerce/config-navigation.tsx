@@ -1,4 +1,4 @@
-import { _mock } from 'src/_mock';
+import { _mock } from 'src/mock';
 import Iconify from 'src/components/iconify';
 import { MegaMenuItemProps } from 'src/components/mega-menu';
 

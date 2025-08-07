@@ -8,7 +8,7 @@ import ListItemText from '@mui/material/ListItemText';
 import ListItemIcon from '@mui/material/ListItemIcon';
 import ListItemButton from '@mui/material/ListItemButton';
 
-import { _mock } from 'src/_mock';
+import { _mock } from 'src/mock';
 import { paths } from 'src/routes/paths';
 import Iconify from 'src/components/iconify';
 import { useActiveLink } from 'src/routes/hooks';

@@ -65,7 +65,7 @@ export default function MegaMenuMobile({ data, open, action, onOpen, onClose }: 
           <Logo sx={{ mx: 2.5, my: 3 }} />
 
           {data.map((parent) => (
-            <SubMenu key={parent.title} parent={parent} pathname={pathname} />
+            <SubMenu key={parent.title} parent={parent} pathname={pathname || ''} />
           ))}
         </Scrollbar>
       </Drawer>

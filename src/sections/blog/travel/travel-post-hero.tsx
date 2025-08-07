@@ -6,7 +6,7 @@ import Typography from '@mui/material/Typography';
 import IconButton from '@mui/material/IconButton';
 import { alpha, useTheme } from '@mui/material/styles';
 
-import { _socials } from 'src/_mock';
+import { _socials } from 'src/mock';
 import { bgGradient } from 'src/theme/css';
 import Iconify from 'src/components/iconify';
 import { fDate } from 'src/utils/format-time';

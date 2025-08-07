@@ -1,4 +1,4 @@
-import EcommerceAccountPaymentView from 'src/sections/_ecommerce/view/ecommerce-account-payment-view';
+import EcommerceAccountPaymentView from 'src/sections/ecommerce/view/ecommerce-account-payment-view';
 
 // ----------------------------------------------------------------------
 

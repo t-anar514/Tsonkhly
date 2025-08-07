@@ -1,4 +1,4 @@
-import MarketingCaseStudiesView from 'src/sections/_marketing/view/marketing-case-studies-view';
+import MarketingCaseStudiesView from 'src/sections/marketing/view/marketing-case-studies-view';
 
 // ----------------------------------------------------------------------
 

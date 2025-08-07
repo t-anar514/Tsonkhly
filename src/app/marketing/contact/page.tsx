@@ -1,4 +1,4 @@
-import MarketingContactView from 'src/sections/_marketing/view/marketing-contact-view';
+import MarketingContactView from 'src/sections/marketing/view/marketing-contact-view';
 
 // ----------------------------------------------------------------------
 

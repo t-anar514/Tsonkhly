@@ -1,4 +1,4 @@
-import EcommerceCheckoutView from 'src/sections/_ecommerce/view/ecommerce-checkout-view';
+import EcommerceCheckoutView from 'src/sections/ecommerce/view/ecommerce-checkout-view';
 
 // ----------------------------------------------------------------------
 

@@ -3,7 +3,7 @@ import Button from '@mui/material/Button';
 import { alpha } from '@mui/material/styles';
 import Typography from '@mui/material/Typography';
 
-import { _socials } from 'src/_mock';
+import { _socials } from 'src/mock';
 import Iconify from 'src/components/iconify';
 
 // ----------------------------------------------------------------------

@@ -1,6 +1,6 @@
 import Container from '@mui/material/Container';
 
-import { _reviews } from 'src/_mock';
+import { _reviews } from 'src/mock';
 import { useBoolean } from 'src/hooks/use-boolean';
 
 import ReviewNewForm from '../common/review-new-form';

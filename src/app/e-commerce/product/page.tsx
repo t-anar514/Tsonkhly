@@ -1,4 +1,4 @@
-import EcommerceProductView from 'src/sections/_ecommerce/view/ecommerce-product-view';
+import EcommerceProductView from 'src/sections/ecommerce/view/ecommerce-product-view';
 
 // ----------------------------------------------------------------------
 

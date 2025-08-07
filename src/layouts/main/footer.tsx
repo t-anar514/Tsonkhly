@@ -12,7 +12,7 @@ import Stack, { StackProps } from '@mui/material/Stack';
 import InputAdornment from '@mui/material/InputAdornment';
 import Button, { buttonClasses } from '@mui/material/Button';
 
-import { _socials } from 'src/_mock';
+import { _socials } from 'src/mock';
 import Logo from 'src/components/logo';
 import Iconify from 'src/components/iconify';
 import { usePathname } from 'src/routes/hooks';

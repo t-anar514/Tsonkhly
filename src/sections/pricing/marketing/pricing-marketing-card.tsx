@@ -2,6 +2,7 @@ import Card from '@mui/material/Card';
 import Stack from '@mui/material/Stack';
 import Button from '@mui/material/Button';
 import Typography from '@mui/material/Typography';
+import Link from 'next/link';
 
 import Label from 'src/components/label';
 import Image from 'src/components/image';
@@ -20,6 +21,14 @@ export default function PricingMarketingCard({ plan }: Props) {
   const starterLicense = plan.license === 'Starter';
 
   const premiumLicense = plan.license === 'Premium';
+  
+  // Always navigate to the base window customizer page
+  const getCustomizerUrl = () => {
+    const url = '/windows/customizer';
+    console.log('License type:', plan.license);
+    console.log('Generated URL:', url);
+    return url;
+  };
 
   return (
     <Card
@@ -72,8 +81,14 @@ export default function PricingMarketingCard({ plan }: Props) {
         size="large"
         color={(premiumLicense && 'primary') || 'inherit'}
         variant={(basicLicense && 'outlined') || 'contained'}
+        onClick={() => {
+          // Use window.location for direct navigation
+          const url = '/windows/customizer';
+          console.log('Button clicked! Navigating to:', url);
+          window.location.href = url;
+        }}
       >
-        Choose Package
+        Энэ Загварыг Тохируулах
       </Button>
     </Card>
   );

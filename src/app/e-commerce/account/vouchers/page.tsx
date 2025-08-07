@@ -1,4 +1,4 @@
-import EcommerceAccountVouchersView from 'src/sections/_ecommerce/view/ecommerce-account-vouchers-view';
+import EcommerceAccountVouchersView from 'src/sections/ecommerce/view/ecommerce-account-vouchers-view';
 
 // ----------------------------------------------------------------------
 

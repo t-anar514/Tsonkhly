@@ -1,4 +1,4 @@
-import EcommerceCompareView from 'src/sections/_ecommerce/view/ecommerce-compare-view';
+import EcommerceCompareView from 'src/sections/ecommerce/view/ecommerce-compare-view';
 
 // ----------------------------------------------------------------------
 

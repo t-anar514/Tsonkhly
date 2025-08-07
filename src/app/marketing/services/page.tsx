@@ -1,4 +1,4 @@
-import MarketingServicesView from 'src/sections/_marketing/view/marketing-services-view';
+import MarketingServicesView from 'src/sections/marketing/view/marketing-services-view';
 
 // ----------------------------------------------------------------------
 

@@ -6,7 +6,7 @@ import Container from '@mui/material/Container';
 import Grid from '@mui/material/Unstable_Grid2';
 import Typography from '@mui/material/Typography';
 
-import { _pricing02 } from 'src/_mock';
+import { _pricing02 } from 'src/mock';
 import Iconify from 'src/components/iconify';
 import { useResponsive } from 'src/hooks/use-responsive';
 

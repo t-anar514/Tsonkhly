@@ -1,4 +1,4 @@
-import MarketingPostView from 'src/sections/_marketing/view/marketing-post-view';
+import MarketingPostView from 'src/sections/marketing/view/marketing-post-view';
 
 // ----------------------------------------------------------------------
 

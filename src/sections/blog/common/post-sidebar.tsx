@@ -8,7 +8,7 @@ import IconButton from '@mui/material/IconButton';
 import Stack, { StackProps } from '@mui/material/Stack';
 import InputAdornment from '@mui/material/InputAdornment';
 
-import { _socials } from 'src/_mock';
+import { _socials } from 'src/mock';
 import Iconify from 'src/components/iconify';
 import { IAuthorProps } from 'src/types/author';
 import { useResponsive } from 'src/hooks/use-responsive';

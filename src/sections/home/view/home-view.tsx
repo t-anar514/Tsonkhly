@@ -53,16 +53,19 @@ const WINDOW_STYLES = [
     image: '/assets/window1.jpg',
     title: '1 Цонхтой',
     description: 'Хажуугаараа тогтоогддог, гадагш нээгдэж дээд зэргийн агааржуулалт өгнө.',
+    url: '/windows/customizer/1tsonh',
   },
   {
     image: '/assets/window2.jpg',
     title: '2 Цонхтой',
     description: 'Хоёр хөдөлгөөнт хэсэгтэй, босоогоор дээш доош хөдөлдөг сонгодог загвар.',
+    url: '/windows/customizer/2tsonh',
   },
   {
     image: '/assets/images/placeholder.png',
     title: '3 Цонхтой',
     description: 'Гэрийн гаднаас гадагш үргэлжилж, дотор талд нэмэлт орон зай үүсгэнэ.',
+    url: '/windows/customizer/3tsonh',
   },
 ];
 
@@ -110,7 +113,7 @@ export default function HomeView() {
                     color="primary"
                     startIcon={<Iconify icon="carbon:pen" />}
                   >
-                    Загварчлал Эхлүүлэх
+                    Цонх Загварчлах Эхлүүлэх
                   </Button>
                   <Button
                     component={RouterLink}
@@ -284,7 +287,7 @@ export default function HomeView() {
               variant="contained"
               endIcon={<Iconify icon="carbon:arrow-right" />}
             >
-              Өөрийн Цонхыг Загварчлаж Эхэл
+              Өөрийн Цонхыг Загварчлаж Эхлэл
             </Button>
           </Box>
         </Container>
