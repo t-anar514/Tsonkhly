@@ -14,9 +14,10 @@ module.exports = {
       use: ['@svgr/webpack'],
     });
     
-    // Ignore problematic example components during build
+    // Configure path aliases
     config.resolve.alias = {
       ...config.resolve.alias,
+      'src': require('path').resolve(__dirname, './src'),
       'src/sections/examples': false,
     };
     
