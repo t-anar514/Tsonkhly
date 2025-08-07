@@ -71,6 +71,7 @@ export type DeliveryOption = 'delivery' | 'pickup';
 // Window section dimensions (for top/bottom sections)
 export interface SectionDimensions {
   height: number;
+  width?: number; // Added width property to fix TypeScript error in WindowVisualization.tsx
   unit: 'inches' | 'centimeters';
 }
 

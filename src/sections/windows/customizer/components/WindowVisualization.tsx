@@ -213,10 +213,9 @@ export const WindowOpeningIndicator = ({
         background: 'linear-gradient(90deg, #555 0%, #888 50%, #666 100%)',
         borderRadius: '4px',
         transform: 'translateY(-50%)',
-        boxShadow: '0px 1px 2px rgba(0,0,0,0.3)',
+        boxShadow: '0 1px 2px rgba(0,0,0,0.4)',
         border: '0.5px solid rgba(100,100,100,0.8)',
         zIndex: 2,
-        boxShadow: '0 1px 2px rgba(0,0,0,0.4)',
       }}
     />
   );
@@ -277,8 +276,8 @@ export const WindowPane = ({
         },
       }}
     >
-      {/* Show window cross only for divided windows */}
-      {style === WindowStyle.DIVIDED && <WindowCross />}
+      {/* Window cross display removed - DIVIDED style not in WindowStyle enum */}
+      {/* <WindowCross /> */}
 
       {/* Render style-specific elements (handles, dividers, etc.) */}
       <WindowStyleElement style={style} openingType={openingType} />
