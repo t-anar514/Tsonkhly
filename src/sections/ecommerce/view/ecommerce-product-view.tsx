@@ -10,7 +10,6 @@ import { useBoolean } from 'src/hooks/use-boolean';
 import { SplashScreen } from 'src/components/loading-screen';
 import CustomBreadcrumbs from 'src/components/custom-breadcrumbs';
 
-import ReviewEcommerce from '../../review/ecommerce/review-ecommerce';
 import EcommerceProductDetailsInfo from '../product/details/ecommerce-product-details-info';
 import EcommerceProductDetailsCarousel from '../product/details/ecommerce-product-details-carousel';
 import EcommerceProductDetailsDescription from '../product/details/ecommerce-product-details-description';
@@ -84,8 +83,6 @@ export default function EcommerceProductView() {
           </Grid>
         </Grid>
       </Container>
-
-      <ReviewEcommerce />
     </>
   );
 }

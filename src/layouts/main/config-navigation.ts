@@ -6,8 +6,6 @@ import { paths } from 'src/routes/paths';
 
 export const navConfig = [
   { title: 'Цонх Авах', path: paths.windows.customizer },
-  { title: 'Хэмжилт Хийх Заавар', path: '/how-to-measure' },
-  { title: 'Зааварчилгаа Видео', path: '/how-to-videos' },
-  { title: 'Сэтгэгдлүүд', path: '/gallery-testimonials' },
+  { title: 'Хэмжилт Хийх Заавар', path: paths.howToMeasure },
   { title: 'Холбоо Барих', path: paths.marketing.contact },
 ];

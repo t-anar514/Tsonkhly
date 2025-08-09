@@ -17,6 +17,7 @@ import Iconify from 'src/components/iconify';
 import { useOffSetTop } from 'src/hooks/use-off-set-top';
 import { useResponsive } from 'src/hooks/use-responsive';
 import { RouterLink } from 'src/routes/components';
+import CurrencySelector from 'src/components/currency-selector';
 
 import { HEADER } from '../config-layout';
 import Searchbar from '../common/searchbar';
@@ -59,6 +60,7 @@ export default function Header({ headerOnDark }: Props) {
             ...bgBlur({ color: theme.palette.primary.main }),
             height: {
               md: HEADER.H_DESKTOP - 36,
+
             },
           }),
         }}
@@ -75,36 +77,12 @@ export default function Header({ headerOnDark }: Props) {
             {mdUp && <NavDesktop data={navConfig} sx={{ flexGrow: 1 }} />}
           </Box>
 
-          {/* Auth and Cart actions */}
+          {/* Right-side actions */}
           <Stack direction="row" spacing={1} alignItems="center">
-            <Button
-              component={RouterLink}
-              href="/auth/login-illustration"
-              variant="text"
-              color="inherit"
-              startIcon={<Iconify icon="carbon:user" />}
-              sx={{ color: theme.palette.primary.contrastText }}
-            >
-              Нэвтрэх
-            </Button>
-            
-            <Button
-              component={RouterLink}
-              href="/auth/register-illustration"
-              variant="outlined"
-              color="inherit"
-              sx={{ 
-                borderColor: theme.palette.primary.contrastText,
-                color: theme.palette.primary.contrastText,
-                '&:hover': {
-                  borderColor: theme.palette.primary.contrastText,
-                  bgcolor: 'rgba(255, 255, 255, 0.08)',
-                },
-              }}
-            >
-              Бүртгүүлэх
-            </Button>
-            
+            {/* Currency Selector */}
+            <CurrencySelector />
+
+            {/* Cart */}
             <IconButton 
               component={RouterLink}
               href="/e-commerce/cart"
@@ -114,17 +92,17 @@ export default function Header({ headerOnDark }: Props) {
                 <Iconify icon="carbon:shopping-cart" width={24} />
               </Badge>
             </IconButton>
-            
+
             {/* Settings button */}
             <SettingsButton />
           </Stack>
-
-          {/* Only show mobile nav on small screens */}
-          {!mdUp && <NavMobile data={navConfig} />}
         </Container>
       </Toolbar>
 
       {offset && <HeaderShadow />}
+
+      {/* Navigation in mobile devices */}
+      {!mdUp && <NavMobile data={navConfig} />}
     </AppBar>
   );
 }

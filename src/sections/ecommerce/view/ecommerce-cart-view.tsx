@@ -60,7 +60,7 @@ export default function EcommerceCartView() {
 
       <Button
         component={RouterLink}
-        href={paths.eCommerce.products}
+        href={paths.windows.customizer}
         color="inherit"
         startIcon={<Iconify icon="carbon:chevron-left" />}
         sx={{ mt: 3 }}

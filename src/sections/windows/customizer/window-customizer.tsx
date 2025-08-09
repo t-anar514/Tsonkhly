@@ -25,6 +25,8 @@ import {
 
 import Iconify from 'src/components/iconify';
 import { useResponsive } from 'src/hooks/use-responsive';
+import { usePricing } from 'src/hooks/use-pricing';
+import { useCurrency } from 'src/contexts/currency-context';
 
 import {
   WindowCustomization,
@@ -90,6 +92,8 @@ export default function WindowCustomizer({
   windowType: initialWindowType,
 }: WindowCustomizerProps = {}) {
   const smUp = useResponsive('up', 'sm');
+  const { pricingData, loading: pricingLoading, error: pricingError } = usePricing();
+  const { formatPrice } = useCurrency();
 
   // State
   const [activeStep, setActiveStep] = useState(0);
@@ -235,64 +239,69 @@ export default function WindowCustomizer({
   };
 
   const calculatePrice = (): number => {
-    // Base price depends on window type
-    let basePrice = 0;
-    switch (windowCustomization.type) {
-      case WindowType.NEW_CONSTRUCTION:
-        basePrice = 250;
-        break;
-      case WindowType.REPLACEMENT:
-        basePrice = 200;
-        break;
-      default:
-        basePrice = 200;
+    // If pricing data is not loaded yet, return a fallback calculation
+    if (!pricingData) {
+      // Fallback calculation using the old logic
+      let basePrice = 0;
+      switch (windowCustomization.type) {
+        case WindowType.NEW_CONSTRUCTION:
+          basePrice = 250;
+          break;
+        case WindowType.REPLACEMENT:
+          basePrice = 200;
+          break;
+        default:
+          basePrice = 200;
+      }
+
+      const area = (windowCustomization.dimensions.width * windowCustomization.dimensions.height) / 10000;
+      let price = basePrice * area;
+
+      // Add for additional features
+      if (windowCustomization.additionalFeatures?.grids) price += 50;
+      if (windowCustomization.additionalFeatures?.screens) price += 30;
+      if (windowCustomization.additionalFeatures?.energyEfficient) price += 80;
+      if (windowCustomization.additionalFeatures?.soundProofing) price += 100;
+
+      // Installation service
+      if (windowCustomization.installationService) price += 150;
+
+      // Multiply by quantity
+      price *= windowCustomization.quantity || 1;
+
+      return price;
     }
 
-    // Adjust based on material
-    let materialMultiplier = 1;
-    switch (windowCustomization.material) {
-      case WindowMaterial.ALUMINUM:
-        materialMultiplier = 1.2;
-        break;
-      case WindowMaterial.FIBERGLASS:
-        materialMultiplier = 1.5;
-        break;
-      case WindowMaterial.VINYL:
-        materialMultiplier = 1;
-        break;
-      case WindowMaterial.WOOD:
-        materialMultiplier = 1.8;
-        break;
-      default:
-        materialMultiplier = 1;
+    // Calculate area in square meters
+    const area = (windowCustomization.dimensions.width * windowCustomization.dimensions.height) / 10000;
+    
+    // Use base price per m2 from API
+    let basePricePerM2 = parseFloat(pricingData.base_price_per_m2);
+    
+    // If area is less than 1 m2, use the less_than_one price
+    if (area < 1) {
+      basePricePerM2 = parseFloat(pricingData.less_than_one);
     }
 
-    // Adjust based on glass type
-    let glassMultiplier = 1;
-    switch (windowCustomization.glassType) {
-      case GlassType.SINGLE_PANE:
-        glassMultiplier = 0.8;
-        break;
-      case GlassType.DOUBLE_PANE:
-        glassMultiplier = 1;
-        break;
-      case GlassType.TRIPLE_PANE:
-        glassMultiplier = 1.3;
-        break;
-      case GlassType.LOW_E:
-        glassMultiplier = 1.2;
-        break;
-      default:
-        glassMultiplier = 1;
+    let price = basePricePerM2 * area;
+
+    // Add color option price if not white (checking against common white color codes)
+    const whiteColors = ['#FFFFFF', '#F4F4F4', '#F6F6F6']; // Including the default color from API
+    if (!whiteColors.includes(windowCustomization.color)) {
+      price += parseFloat(pricingData.option_color_price_m2) * area;
     }
 
-    // Size adjustment
-    const area =
-      (windowCustomization.dimensions.width * windowCustomization.dimensions.height) / 10000; // Convert to square meters
+    // Add dried glass option price if applicable
+    if (windowCustomization.glassType === GlassType.LOW_E) {
+      price += parseFloat(pricingData.option_dried_glass_price_m2) * area;
+    }
 
-    let price = basePrice * materialMultiplier * glassMultiplier * area;
+    // Add triple glass option price if applicable
+    if (windowCustomization.glassType === GlassType.TRIPLE_PANE) {
+      price += parseFloat(pricingData.option_triple_glass_price_m2) * area;
+    }
 
-    // Add for additional features
+    // Add for additional features (keeping existing logic for now)
     if (windowCustomization.additionalFeatures?.grids) price += 50;
     if (windowCustomization.additionalFeatures?.screens) price += 30;
     if (windowCustomization.additionalFeatures?.energyEfficient) price += 80;
@@ -614,10 +623,14 @@ export default function WindowCustomizer({
               <Typography variant="body2">
                 <strong>Хэмжээ:</strong> {windowCustomization.dimensions.width} ×{' '}
                 {windowCustomization.dimensions.height} {windowCustomization.dimensions.unit}
-                ``{' '}
               </Typography>
               <Typography variant="body2">
                 <strong>Тоо ширхэг:</strong> {windowCustomization.quantity}
+              </Typography>
+              
+              {/* Price display */}
+              <Typography variant="body2" sx={{ mt: 1, fontWeight: 'bold' }}>
+                <strong>Үнэ:</strong> {formatPrice(estimatedPrice)}
               </Typography>
             </Box>
           </Card>

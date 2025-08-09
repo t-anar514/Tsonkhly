@@ -7,16 +7,9 @@ const nextConfig = {
   typescript: {
     ignoreBuildErrors: true,
   },
-  // Set output to export for static site generation
-  output: 'export',
+  // Removed static export to allow API routes to function
+  // output: 'export',
   // Completely disable server-side rendering for deployment
-  experimental: {
-    serverComponentsExternalPackages: [
-      '@mui/material',
-      '@emotion/react',
-      '@emotion/styled'
-    ],
-  },
   // Skip building problematic pages for quicker deployment
   skipTrailingSlashRedirect: true,
   skipMiddlewareUrlNormalize: true,

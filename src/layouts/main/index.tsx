@@ -3,6 +3,7 @@
 import Box from '@mui/material/Box';
 
 import { usePathname } from 'src/routes/hooks';
+import { CurrencyProvider } from 'src/contexts/currency-context';
 
 import { HEADER } from '../config-layout';
 
@@ -11,16 +12,9 @@ import Footer from './footer';
 
 // ----------------------------------------------------------------------
 
-const pathsOnDark = ['/career', '/career/', '/travel', '/travel/'];
+const pathsOnDark = [] as string[];
 
-const spacingLayout = [
-  ...pathsOnDark,
-  '/',
-  '/e-learning',
-  '/e-learning/',
-  '/marketing',
-  '/marketing/',
-];
+const spacingLayout = ['/'] as string[];
 
 type Props = {
   children: React.ReactNode;
@@ -32,22 +26,24 @@ export default function MainLayout({ children }: Props) {
   const actionPage = (arr: string[]) => arr.some((path) => pathname === path);
 
   return (
-    <Box sx={{ display: 'flex', flexDirection: 'column', height: 1 }}>
-      <Header headerOnDark={actionPage(pathsOnDark)} />
+    <CurrencyProvider>
+      <Box sx={{ display: 'flex', flexDirection: 'column', height: 1 }}>
+        <Header headerOnDark={actionPage(pathsOnDark)} />
 
-      <Box
-        component="main"
-        sx={{
-          flexGrow: 1,
-        }}
-      >
-        {!actionPage(spacingLayout) && <Spacing />}
+        <Box
+          component="main"
+          sx={{
+            flexGrow: 1,
+          }}
+        >
+          {!actionPage(spacingLayout) && <Spacing />}
 
-        {children}
+          {children}
+        </Box>
+
+        <Footer />
       </Box>
-
-      <Footer />
-    </Box>
+    </CurrencyProvider>
   );
 }
 

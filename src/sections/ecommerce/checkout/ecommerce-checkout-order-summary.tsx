@@ -63,23 +63,11 @@ export default function EcommerceCheckoutOrderSummary({
 
         <Row label="Shipping" value={fCurrency(shipping)} />
 
-        <Row label="Discount (15%)" value={`-${fCurrency(discount)}`} />
-
+       
         <Row label="Tax" value={fPercent(tax)} />
       </Stack>
 
-      <TextField
-        hiddenLabel
-        placeholder="Discount Code"
-        InputProps={{
-          endAdornment: (
-            <InputAdornment position="end">
-              <Button>Apply</Button>
-            </InputAdornment>
-          ),
-        }}
-      />
-
+   
       <Divider sx={{ borderStyle: 'dashed' }} />
 
       <Row

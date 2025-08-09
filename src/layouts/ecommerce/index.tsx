@@ -1,7 +1,5 @@
 'use client';
 
-import Header from './header';
-
 // ----------------------------------------------------------------------
 
 type Props = {
@@ -9,11 +7,5 @@ type Props = {
 };
 
 export default function EcommerceLayout({ children }: Props) {
-  return (
-    <>
-      <Header />
-
-      {children}
-    </>
-  );
+  return <>{children}</>;
 }

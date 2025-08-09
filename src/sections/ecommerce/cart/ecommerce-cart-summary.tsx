@@ -105,22 +105,10 @@ export default function EcommerceCartSummary({ tax, total, subtotal, shipping, d
 
         <Row label="Хүргэлт" value={fCurrency(shipping)} />
 
-        <Row label="Хөнгөлөлт (15%)" value={`-${fCurrency(discount)}`} />
-
         <Row label="Татвар" value={fPercent(tax)} />
       </Stack>
 
-      <TextField
-        hiddenLabel
-        placeholder="Хөнгөлөлтийн код"
-        InputProps={{
-          endAdornment: (
-            <InputAdornment position="end">
-              <Button>Хэрэглэх</Button>
-            </InputAdornment>
-          ),
-        }}
-      />
+    
 
       <Divider sx={{ borderStyle: 'dashed' }} />
 

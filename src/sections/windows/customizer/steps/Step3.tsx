@@ -14,9 +14,12 @@ import {
   ListItem,
   ListItemText,
   ListItemIcon,
+  CircularProgress,
 } from '@mui/material';
-import { WindowShape, WindowCustomization } from '../../types/window-types';
+import { WindowShape, WindowCustomization, GlassType } from '../../types/window-types';
 import WindowVisualization from '../components/WindowVisualization';
+import { usePricing } from 'src/hooks/use-pricing';
+import { useCurrency } from 'src/contexts/currency-context';
 
 type Step3Props = {
   windowCustomization: WindowCustomization;
@@ -44,15 +47,72 @@ export default function Step3({
   onChangeSkylightHeight,
   onSubmitOrder,
 }: Step3Props) {
-  // Calculate estimated price based on dimensions and features
-  const basePrice = 250; // Base price in MNT
-  const areaMultiplier = 0.5; // Price per square cm
+  const { pricingData, loading: pricingLoading, error: pricingError } = usePricing();
+  const { formatPrice } = useCurrency();
 
+  // Calculate area in square meters
   const windowArea = windowCustomization.dimensions.width * windowCustomization.dimensions.height;
-  const calculatedPrice = basePrice + windowArea * areaMultiplier;
+  const areaInM2 = windowArea / 10000;
 
+  // Calculate price based on API data or fallback
+  const calculatePriceBreakdown = () => {
+    if (!pricingData) {
+      // Fallback calculation
+      const basePrice = 250;
+      const areaMultiplier = 0.5;
+      const calculatedPrice = basePrice + windowArea * areaMultiplier;
+      
+      return {
+        basePrice: basePrice,
+        areaPrice: windowArea * areaMultiplier,
+        totalPrice: calculatedPrice,
+        colorPrice: 0,
+        glassPrice: 0,
+      };
+    }
+
+    // Use API pricing data
+    let basePricePerM2 = parseFloat(pricingData.base_price_per_m2);
+    
+    // If area is less than 1 m2, use the less_than_one price
+    if (areaInM2 < 1) {
+      basePricePerM2 = parseFloat(pricingData.less_than_one);
+    }
+
+    const basePrice = basePricePerM2 * areaInM2;
+    let colorPrice = 0;
+    let glassPrice = 0;
+
+    // Add color option price if not white (checking against common white color codes)
+    const whiteColors = ['#FFFFFF', '#F4F4F4', '#F6F6F6']; // Including the default color from API
+    if (!whiteColors.includes(windowCustomization.color)) {
+      colorPrice = parseFloat(pricingData.option_color_price_m2) * areaInM2;
+    }
+
+    // Add glass option prices
+    if (windowCustomization.glassType === GlassType.LOW_E) {
+      glassPrice += parseFloat(pricingData.option_dried_glass_price_m2) * areaInM2;
+    }
+
+    if (windowCustomization.glassType === GlassType.TRIPLE_PANE) {
+      glassPrice += parseFloat(pricingData.option_triple_glass_price_m2) * areaInM2;
+    }
+
+    const totalPrice = basePrice + colorPrice + glassPrice;
+
+    return {
+      basePrice,
+      areaPrice: 0, // Not used with API pricing
+      totalPrice,
+      colorPrice,
+      glassPrice,
+    };
+  };
+
+  const priceBreakdown = calculatePriceBreakdown();
+  
   // Use provided estimated price if available, otherwise use calculated price
-  const estimatedPrice = providedEstimatedPrice || calculatedPrice;
+  const estimatedPrice = providedEstimatedPrice || priceBreakdown.totalPrice;
 
   // Add premium for special features
   const getPremiumFeatures = () => {
@@ -205,28 +265,47 @@ export default function Step3({
                 Үнийн тооцоо
               </Typography>
 
-              <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
-                <Typography variant="body2">Үндсэн үнэ:</Typography>
-                <Typography variant="body2">{basePrice.toLocaleString()} ₮</Typography>
-              </Box>
-
-              <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
-                <Typography variant="body2">Хэмжээний нэмэлт үнэ:</Typography>
-                <Typography variant="body2">
-                  {(windowArea * areaMultiplier).toLocaleString()} ₮
+              {pricingLoading ? (
+                <Box sx={{ display: 'flex', justifyContent: 'center', py: 2 }}>
+                  <CircularProgress size={24} />
+                </Box>
+              ) : pricingError ? (
+                <Typography variant="body2" color="error" gutterBottom>
+                  Error loading pricing: {pricingError}
                 </Typography>
-              </Box>
+              ) : (
+                <>
+                  <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
+                    <Typography variant="body2">Үндсэн үнэ ({areaInM2.toFixed(2)} м²):</Typography>
+                    <Typography variant="body2">{formatPrice(priceBreakdown.basePrice)}</Typography>
+                  </Box>
 
-              <Divider sx={{ my: 1 }} />
+                  {priceBreakdown.colorPrice > 0 && (
+                    <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
+                      <Typography variant="body2">Өнгөний нэмэлт үнэ:</Typography>
+                      <Typography variant="body2">{formatPrice(priceBreakdown.colorPrice)}</Typography>
+                    </Box>
+                  )}
 
-              <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-                <Typography variant="subtitle2" fontWeight="bold">
-                  Нийт үнэ:
-                </Typography>
-                <Typography variant="subtitle2" fontWeight="bold" color="primary">
-                  {estimatedPrice.toLocaleString()} ₮
-                </Typography>
-              </Box>
+                  {priceBreakdown.glassPrice > 0 && (
+                    <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
+                      <Typography variant="body2">Шилний нэмэлт үнэ:</Typography>
+                      <Typography variant="body2">{formatPrice(priceBreakdown.glassPrice)}</Typography>
+                    </Box>
+                  )}
+
+                  <Divider sx={{ my: 1 }} />
+
+                  <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
+                    <Typography variant="subtitle2" fontWeight="bold">
+                      Нийт үнэ:
+                    </Typography>
+                    <Typography variant="subtitle2" fontWeight="bold" color="primary">
+                      {formatPrice(estimatedPrice)}
+                    </Typography>
+                  </Box>
+                </>
+              )}
             </CardContent>
           </Card>
 

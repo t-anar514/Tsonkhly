@@ -4,9 +4,9 @@ import { m } from 'framer-motion';
 
 import Button from '@mui/material/Button';
 import Typography from '@mui/material/Typography';
+import Box from '@mui/material/Box';
 
 import Image from 'src/components/image';
-import CompactLayout from 'src/layouts/compact';
 import { RouterLink } from 'src/routes/components';
 import { varBounce, MotionContainer } from 'src/components/animate';
 
@@ -14,7 +14,7 @@ import { varBounce, MotionContainer } from 'src/components/animate';
 
 export default function Error500View() {
   return (
-    <CompactLayout>
+    <Box sx={{ minHeight: '80vh', display: 'flex', alignItems: 'center', justifyContent: 'center', p: 3 }}>
       <MotionContainer>
         <m.div variants={varBounce().in}>
           <Typography variant="h3" paragraph>
@@ -44,6 +44,6 @@ export default function Error500View() {
           Go to Home
         </Button>
       </MotionContainer>
-    </CompactLayout>
+    </Box>
   );
 }
